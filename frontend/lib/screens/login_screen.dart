@@ -102,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Header
-                    const Icon(Icons.lock_outline, size: 64, color: Colors.deepPurple),
+                    const Icon(Icons.lock_outline, size: 64, color: Colors.green),
                     const SizedBox(height: 16),
                     Text(
                       'Welcome back',

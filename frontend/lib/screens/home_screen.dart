@@ -35,7 +35,7 @@ class HomeScreen extends StatelessWidget {
               // Avatar
               CircleAvatar(
                 radius: 40,
-                backgroundColor: Colors.deepPurple.shade100,
+                backgroundColor: Colors.green.shade700,
                 backgroundImage: photoURL != null
                     ? NetworkImage(photoURL)
                     : null,
@@ -46,7 +46,7 @@ class HomeScreen extends StatelessWidget {
                             : '?',
                         style: const TextStyle(
                           fontSize: 32,
-                          color: Colors.deepPurple,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       )

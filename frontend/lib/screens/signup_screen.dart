@@ -68,7 +68,7 @@ class _SignupScreenState extends State<SignupScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.deepPurple),
+        iconTheme: const IconThemeData(color: Colors.green),
       ),
       body: SafeArea(
         child: Center(
@@ -83,7 +83,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   children: [
                     // Header
                     const Icon(Icons.person_add_outlined,
-                        size: 64, color: Colors.deepPurple),
+                        size: 64, color: Colors.green),
                     const SizedBox(height: 16),
                     Text(
                       'Create account',
@@ -220,7 +220,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: const Text(
                             'Sign in',
                             style: TextStyle(
-                              color: Colors.deepPurple,
+                              color: Colors.green,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
