@@ -20,3 +20,7 @@ For Mac
 
 `mongosh`  
 `use <database-name>`
+
+### Running the server
+
+`npm run dev`
