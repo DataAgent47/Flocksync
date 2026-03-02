@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../app_colors.dart';
 import '../services/auth_service.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -35,7 +36,7 @@ class HomeScreen extends StatelessWidget {
               // Avatar
               CircleAvatar(
                 radius: 40,
-                backgroundColor: Colors.green.shade700,
+                backgroundColor: AppColors.darkGreen,
                 backgroundImage: photoURL != null
                     ? NetworkImage(photoURL)
                     : null,
@@ -46,7 +47,7 @@ class HomeScreen extends StatelessWidget {
                             : '?',
                         style: const TextStyle(
                           fontSize: 32,
-                          color: Colors.white,
+                          color: AppColors.background,
                           fontWeight: FontWeight.bold,
                         ),
                       )
@@ -66,7 +67,7 @@ class HomeScreen extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodyLarge
-                    ?.copyWith(color: Colors.grey[600]),
+                  ?.copyWith(color: AppColors.green2),
               ),
               const SizedBox(height: 4),
               Text(
@@ -74,7 +75,7 @@ class HomeScreen extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .bodySmall
-                    ?.copyWith(color: Colors.grey[400]),
+                  ?.copyWith(color: AppColors.middleground),
               ),
               const SizedBox(height: 32),
               OutlinedButton.icon(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../app_colors.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 
@@ -73,9 +74,9 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.background,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.green),
+        iconTheme: const IconThemeData(color: AppColors.darkGreen),
       ),
       body: SafeArea(
         child: Center(
@@ -90,7 +91,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   children: [
                     // Header
                     const Icon(Icons.person_add_outlined,
-                        size: 64, color: Colors.green),
+                      size: 64, color: AppColors.darkGreen),
                     const SizedBox(height: 16),
                     Text(
                       'Create account',
@@ -103,7 +104,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     Text(
                       'Sign up to get started',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                            color: AppColors.green2,
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -189,7 +190,10 @@ class _SignupScreenState extends State<SignupScreen> {
                         padding: const EdgeInsets.only(top: 4, bottom: 4),
                         child: Text(
                           _errorMessage!,
-                          style: const TextStyle(color: Colors.red, fontSize: 13),
+                          style: const TextStyle(
+                            color: AppColors.darkGreen,
+                            fontSize: 13,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -207,7 +211,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AppColors.background,
                               ),
                             )
                           : const Text('Create Account'),
@@ -220,14 +224,14 @@ class _SignupScreenState extends State<SignupScreen> {
                       children: [
                         Text(
                           'Already have an account? ',
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: const TextStyle(color: AppColors.green2),
                         ),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
                           child: const Text(
                             'Sign in',
                             style: TextStyle(
-                              color: Colors.green,
+                              color: AppColors.darkGreen,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

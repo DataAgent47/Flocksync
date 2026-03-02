@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../app_colors.dart';
 import '../services/auth_service.dart';
 import 'signup_screen.dart';
 
@@ -179,7 +180,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Header
-                    const Icon(Icons.lock_outline, size: 64, color: Colors.green),
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 64,
+                      color: AppColors.darkGreen,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Welcome back',
@@ -192,18 +197,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Sign in to your account',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                            color: AppColors.green2,
                           ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
 
                     // Info / warning / error banner
+                    // Todo: Decide on better colors
                     if (_errorMessage != null)
                       _buildBanner(
                         message: _errorMessage!,
                         bgColor: Colors.red.shade50,
-                        borderColor: Colors.red.shade200,
+                        borderColor: Colors.red.shade300,
                         iconColor: Colors.red.shade700,
                         textColor: Colors.red.shade800,
                         icon: Icons.error_outline,
@@ -212,16 +218,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       _infoIsError
                           ? _buildBanner(
                               message: _infoMessage!,
-                              bgColor: Colors.orange.shade50,
-                              borderColor: Colors.orange.shade200,
-                              iconColor: Colors.orange.shade700,
-                              textColor: Colors.orange.shade800,
+                              bgColor: Colors.yellow.shade50,
+                              borderColor: Colors.yellow.shade700,
+                              iconColor: Colors.yellow.shade800,
+                              textColor: Colors.yellow.shade900,
                               icon: Icons.warning_amber_rounded,
                             )
                           : _buildBanner(
                               message: _infoMessage!,
                               bgColor: Colors.green.shade50,
-                              borderColor: Colors.green.shade200,
+                              borderColor: Colors.green.shade300,
                               iconColor: Colors.green.shade700,
                               textColor: Colors.green.shade800,
                               icon: Icons.mark_email_read_outlined,
@@ -282,7 +288,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AppColors.background,
                               ),
                             )
                           : const Text('Sign In'),
@@ -295,7 +301,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         const Expanded(child: Divider()),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text('or', style: TextStyle(color: Colors.grey[500])),
+                          child: const Text(
+                            'or',
+                            style: TextStyle(color: AppColors.green2),
+                          ),
                         ),
                         const Expanded(child: Divider()),
                       ],
@@ -319,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           "Don't have an account? ",
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: const TextStyle(color: AppColors.green2),
                         ),
                         GestureDetector(
                           onTap: () => Navigator.push(
@@ -331,7 +340,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: const Text(
                             'Sign up',
                             style: TextStyle(
-                              color: Colors.deepPurple,
+                              color: AppColors.darkGreen,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

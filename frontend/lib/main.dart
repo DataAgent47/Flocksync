@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'app_colors.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -22,7 +23,22 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flocksync Auth Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green.shade700),
+        colorScheme: const ColorScheme.light(
+          primary: AppColors.darkGreen,
+          onPrimary: AppColors.background,
+          secondary: AppColors.green2,
+          onSecondary: AppColors.background,
+          surface: AppColors.background,
+          onSurface: AppColors.darkGreen,
+          error: AppColors.darkGreen,
+          onError: AppColors.background,
+        ),
+        scaffoldBackgroundColor: AppColors.background,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.background,
+          foregroundColor: AppColors.darkGreen,
+          elevation: 0,
+        ),
       ),
       home: const Authtest(),
     );
