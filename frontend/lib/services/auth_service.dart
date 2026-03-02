@@ -22,14 +22,19 @@ class AuthService {
     );
   }
 
-  Future<UserCredential> signUpWithEmail({
+  Future<void> signUpWithEmail({
     required String email,
     required String password,
   }) async {
-    return await _auth.createUserWithEmailAndPassword(
+    final credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
       password: password,
     );
+    try {
+      await credential.user?.sendEmailVerification();
+    } finally {
+      await _auth.signOut();
+    }
   }
 
   // GOOGLE

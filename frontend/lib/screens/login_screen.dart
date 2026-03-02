@@ -4,6 +4,9 @@ import '../services/auth_service.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
+  static String? pendingMessage;
+  static bool pendingMessageIsError = false;
+
   const LoginScreen({super.key});
 
   @override
@@ -19,6 +22,22 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
+  String? _infoMessage;
+  bool _infoIsError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _consumePendingMessage();
+  }
+
+  void _consumePendingMessage() {
+    if (LoginScreen.pendingMessage != null) {
+      _infoMessage = LoginScreen.pendingMessage;
+      _infoIsError = LoginScreen.pendingMessageIsError;
+      LoginScreen.pendingMessage = null;
+    }
+  }
 
   @override
   void dispose() {
@@ -32,13 +51,31 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _infoMessage = null;
     });
 
     try {
-      await _authService.signInWithEmail(
+      final credential = await _authService.signInWithEmail(
         email: _emailController.text,
         password: _passwordController.text,
       );
+
+      final user = credential.user;
+      if (user != null && !user.emailVerified) {
+        // Set message before async ops to survive widget recreation
+        LoginScreen.pendingMessage =
+            'Your email is not yet verified. A new verification link has been sent to ${user.email}.';
+        LoginScreen.pendingMessageIsError = true;
+        try {
+          await user.sendEmailVerification();
+        } catch (_) {
+          LoginScreen.pendingMessage =
+              'Your email is not yet verified. Please check your inbox or try again later.';
+        }
+        await _authService.signOut();
+        // signOut triggers auth state change; a new LoginScreen will read pendingMessage
+        return;
+      }
       // Auth state stream in main.dart handles navigation
     } on FirebaseAuthException catch (e) {
       setState(() => _errorMessage = _friendlyError(e.code));
@@ -87,8 +124,48 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Widget _buildBanner({
+    required String message,
+    required Color bgColor,
+    required Color borderColor,
+    required Color iconColor,
+    required Color textColor,
+    required IconData icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(color: textColor, fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Backup: consume pending message if initState missed it
+    if (_infoMessage == null && LoginScreen.pendingMessage != null) {
+      _infoMessage = LoginScreen.pendingMessage;
+      _infoIsError = LoginScreen.pendingMessageIsError;
+      LoginScreen.pendingMessage = null;
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -120,6 +197,35 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
+
+                    // Info / warning / error banner
+                    if (_errorMessage != null)
+                      _buildBanner(
+                        message: _errorMessage!,
+                        bgColor: Colors.red.shade50,
+                        borderColor: Colors.red.shade200,
+                        iconColor: Colors.red.shade700,
+                        textColor: Colors.red.shade800,
+                        icon: Icons.error_outline,
+                      )
+                    else if (_infoMessage != null)
+                      _infoIsError
+                          ? _buildBanner(
+                              message: _infoMessage!,
+                              bgColor: Colors.orange.shade50,
+                              borderColor: Colors.orange.shade200,
+                              iconColor: Colors.orange.shade700,
+                              textColor: Colors.orange.shade800,
+                              icon: Icons.warning_amber_rounded,
+                            )
+                          : _buildBanner(
+                              message: _infoMessage!,
+                              bgColor: Colors.green.shade50,
+                              borderColor: Colors.green.shade200,
+                              iconColor: Colors.green.shade700,
+                              textColor: Colors.green.shade800,
+                              icon: Icons.mark_email_read_outlined,
+                            ),
 
                     // Email field
                     TextFormField(
@@ -163,18 +269,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     const SizedBox(height: 8),
-
-                    // Error message
-                    if (_errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4, bottom: 4),
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: Colors.red, fontSize: 13),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    const SizedBox(height: 12),
 
                     // Sign in button
                     FilledButton(

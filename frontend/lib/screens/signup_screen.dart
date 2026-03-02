@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -37,12 +38,16 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
+      LoginScreen.pendingMessage =
+          'Account created! Please check your email to verify your account.';
+      LoginScreen.pendingMessageIsError = false;
       await _authService.signUpWithEmail(
         email: _emailController.text,
         password: _passwordController.text,
       );
       if (mounted) Navigator.of(context).pop();
     } on FirebaseAuthException catch (e) {
+      LoginScreen.pendingMessage = null;
       setState(() => _errorMessage = _friendlyError(e.code));
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -57,6 +62,8 @@ class _SignupScreenState extends State<SignupScreen> {
         return 'Please enter a valid email address.';
       case 'weak-password':
         return 'Password must be at least 6 characters.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
       default:
         return 'Sign-up failed ($code). Please try again.';
     }

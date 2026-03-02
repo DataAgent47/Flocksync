@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flocksync Auth Demo',
       theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.green.shade700),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green.shade700),
       ),
       home: const Authtest(),
     );
@@ -48,6 +48,15 @@ class Authtest extends StatelessWidget {
         // Home or login based on auth state
         final user = snapshot.data;
         if (user != null) {
+          // Require email verification for email/password users
+          final isEmailPasswordUser =
+              user.providerData.any((info) => info.providerId == 'password');
+          if (isEmailPasswordUser && !user.emailVerified) {
+            // Briefly shown while the signup/login flow signs the user out
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
           return HomeScreen(user: user);
         }
         return const LoginScreen();
