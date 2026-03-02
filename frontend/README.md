@@ -30,3 +30,9 @@
     flutter run
     flutter run -d chrome
     ```
+
+### Firebase setup 
+
+If you have the config files, which are named `firebase_options.dart`, then just drop it to `frontend/lib`.
+
+Otherwise, you can generate it yourself by following [instructions here](https://firebase.google.com/docs/flutter/setup?platform=ios).
