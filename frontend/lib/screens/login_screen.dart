@@ -204,32 +204,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
 
                     // Info / warning / error banner
-                    // Todo: Decide on better colors
                     if (_errorMessage != null)
                       _buildBanner(
                         message: _errorMessage!,
-                        bgColor: Colors.red.shade50,
-                        borderColor: Colors.red.shade300,
-                        iconColor: Colors.red.shade700,
-                        textColor: Colors.red.shade800,
+                        bgColor: Color.alphaBlend(
+                          const Color(0x26C62828),
+                          AppColors.background,
+                        ),
+                        borderColor: Color.alphaBlend(
+                          const Color(0x66C62828),
+                          AppColors.middleground,
+                        ),
+                        iconColor: AppColors.darkGreen,
+                        textColor: AppColors.darkGreen,
                         icon: Icons.error_outline,
                       )
                     else if (_infoMessage != null)
                       _infoIsError
                           ? _buildBanner(
                               message: _infoMessage!,
-                              bgColor: Colors.yellow.shade50,
-                              borderColor: Colors.yellow.shade700,
-                              iconColor: Colors.yellow.shade800,
-                              textColor: Colors.yellow.shade900,
+                              bgColor: Color.alphaBlend(
+                                const Color(0x26F9A825),
+                                AppColors.background,
+                              ),
+                              borderColor: Color.alphaBlend(
+                                const Color(0x66F9A825),
+                                AppColors.middleground,
+                              ),
+                              iconColor: AppColors.darkGreen,
+                              textColor: AppColors.darkGreen,
                               icon: Icons.warning_amber_rounded,
                             )
                           : _buildBanner(
                               message: _infoMessage!,
-                              bgColor: Colors.green.shade50,
-                              borderColor: Colors.green.shade300,
-                              iconColor: Colors.green.shade700,
-                              textColor: Colors.green.shade800,
+                              bgColor: Color.alphaBlend(
+                                const Color(0x262E7D32),
+                                AppColors.background,
+                              ),
+                              borderColor: Color.alphaBlend(
+                                const Color(0x662E7D32),
+                                AppColors.middleground,
+                              ),
+                              iconColor: AppColors.darkGreen,
+                              textColor: AppColors.darkGreen,
                               icon: Icons.mark_email_read_outlined,
                             ),
 
