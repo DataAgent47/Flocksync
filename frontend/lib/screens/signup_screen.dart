@@ -190,8 +190,11 @@ class _SignupScreenState extends State<SignupScreen> {
                         padding: const EdgeInsets.only(top: 4, bottom: 4),
                         child: Text(
                           _errorMessage!,
-                          style: const TextStyle(
-                            color: AppColors.darkGreen,
+                          style: TextStyle(
+                            color: Color.alphaBlend(
+                              const Color(0x66C62828),
+                              AppColors.middleground,
+                            ),
                             fontSize: 13,
                           ),
                           textAlign: TextAlign.center,
