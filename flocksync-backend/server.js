@@ -3,7 +3,10 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import admin from 'firebase-admin'
-import serviceAccount from './serviceAccountKey.json' assert { type: 'json' }
+import serviceAccount from './serviceAccountKey.json' with { type: 'json' }
+import axios from 'axios'
+
+// TODO: add differentiation between account types, residents, management, application administrator
 
 dotenv.config()
 const app = express()
@@ -17,6 +20,10 @@ app.use(
       credentials: true,
    }),
 )
+
+app.get('/', (req, res) => {
+   res.send('first web server endpoint')
+})
 
 // firebase admin init
 admin.initializeApp({
