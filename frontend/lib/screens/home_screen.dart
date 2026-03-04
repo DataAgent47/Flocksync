@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../app_colors.dart';
 import '../services/auth_service.dart';
+import 'onboarding_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final User user;
@@ -78,6 +79,26 @@ class HomeScreen extends StatelessWidget {
                   ?.copyWith(color: AppColors.middleground),
               ),
               const SizedBox(height: 32),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const OnboardingScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.rocket_launch),
+                label: const Text('Start Onboarding'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.darkGreen,
+                  foregroundColor: AppColors.background,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
+                ),
+              ),
+              const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: () async => await authService.signOut(),
                 icon: const Icon(Icons.logout),
