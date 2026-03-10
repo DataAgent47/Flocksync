@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flocksync Auth Demo',
+      title: 'Flocksync',
       theme: ThemeData(
         colorScheme: const ColorScheme.light(
           primary: AppColors.darkGreen,
@@ -30,8 +30,7 @@ class MyApp extends StatelessWidget {
           onSecondary: AppColors.background,
           surface: AppColors.background,
           onSurface: AppColors.darkGreen,
-          error: AppColors.darkGreen,
-          onError: AppColors.background,
+          onError: AppColors.darkGreen,
         ),
         scaffoldBackgroundColor: AppColors.background,
         appBarTheme: const AppBarTheme(

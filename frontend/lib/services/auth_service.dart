@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   // Stream of auth state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -47,7 +48,10 @@ class AuthService {
     }
 
     // Mobile
-    final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+    await _googleSignIn.initialize(
+      serverClientId:'1089004613765-pjk9ct5vb9o92rc7ftekr06p016qi1j9.apps.googleusercontent.com',
+    );
+    final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
     final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
@@ -59,7 +63,7 @@ class AuthService {
   // SIGN OUT
 
   Future<void> signOut() async {
-    if (!kIsWeb) await GoogleSignIn.instance.signOut();
+    if (!kIsWeb) await _googleSignIn.signOut();
     await _auth.signOut();
   }
 }
