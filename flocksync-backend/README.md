@@ -27,7 +27,11 @@ brew services start mongodb-community
 
 `mongosh`
 `use <database-name>`
-in the .env for local development
+
+for docker and docker-compose:
+`docker compose -f docker-mongo.yml config` 
+
+in the .env for local development:
 `MONGO_URI=mongodb://localhost:27017/flocksync`
 
 ### Firebase Setup
@@ -42,8 +46,25 @@ in the .env for local development
 
 ### Running the server
 
-`npm run dev`
-
+```bash
+docker compose -f docker-mongo.yml up -d
+npm run dev
 ```
 
-```
+
+
+### 4. Verify
+
+- Check container health:
+	`docker ps --filter name=flocksync-mongodb`
+- View Mongo logs:
+	`docker logs flocksync-mongodb --tail 100`
+- Test API:
+	`curl http://localhost:5000/`
+
+### 5. Stop / reset
+
+- Stop container:
+	`docker compose -f docker-compose.mongo.yml down`
+- Stop and remove DB data volume:
+	`docker compose -f docker-compose.mongo.yml down -v`
