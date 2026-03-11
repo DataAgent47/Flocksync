@@ -23,6 +23,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _phoneController = TextEditingController();
   final _aptController = TextEditingController();
   String? _selectedManagementRole;
+  bool _managementRoleVerified = false;
 
   @override
   void initState() {
@@ -128,6 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       9 => _stateManagementDetails(),
       10 => _stateInviteResidents(),
       11 => _stateManagementCompleted(),
+      12 => _stateManagementRoleVerification(),
       _ => _stateRoleSelection(),
     };
   }
@@ -687,7 +689,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _updateFlow(_flow.goTo(10)),
+                onPressed: () {
+                  final needsVerification =
+                      _selectedManagementRole == 'Building Owner' ||
+                      _selectedManagementRole == 'Superintendant';
+                  _updateFlow(_flow.goTo(needsVerification ? 12 : 10));
+                },
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -701,7 +708,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // State 10: Invite Residents as Management
-
   Widget _stateInviteResidents() {
     return Column(
       key: const ValueKey(10),
@@ -785,7 +791,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // State 11: Complete Management Onboarding
-
   Widget _stateManagementCompleted() {
     return Column(
       key: const ValueKey(11),
@@ -801,6 +806,71 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: const Text('Go to Dashboard'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // State 12: Management Role Verification
+  Widget _stateManagementRoleVerification() {
+    final role = _selectedManagementRole;
+
+    return Column(
+      key: const ValueKey(12),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _header(
+          icon: Icons.verified_user_outlined,
+          title: 'Management Verification',
+        ),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.middleground.withAlpha(40),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.middleground),
+          ),
+          child: Text(
+            'Please provide proof of your role as "$role". Some examples include: tax records, utility bills.',
+            style: Theme.of(context).textTheme.bodyLarge,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        // Later add file or image uploads
+        const SizedBox(height: 16),
+        CheckboxListTile(
+          value: _managementRoleVerified,
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+          title: const Text('I confirm this info is accurate.'),
+          onChanged: (value) {
+            setState(() {
+              _managementRoleVerified = value ?? false;
+            });
+          },
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            _backButton(),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: _managementRoleVerified
+                    ? () {
+                        _updateFlow(_flow.goTo(10));
+                        setState(() {
+                          _managementRoleVerified = false;
+                        });
+                      }
+                    : null,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('Continue'),
               ),
             ),
           ],

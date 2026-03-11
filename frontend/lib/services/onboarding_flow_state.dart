@@ -52,6 +52,7 @@ class OnboardingFlowState {
       9 => goTo(8),
       10 => goTo(9),
       11 => goTo(10),
+      12 => goTo(9),
       _ => goTo(1),
     };
   }
