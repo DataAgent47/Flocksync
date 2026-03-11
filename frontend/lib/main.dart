@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'Pages/maintenance_page.dart';
+import 'pages/maintenance_page.dart';
+import 'color.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,9 +22,15 @@ class FlockSyncApp extends StatelessWidget {
     return MaterialApp(
       title: "FlockSync",
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
-        primaryColor: const Color(0xFF2E7D67),
+        primaryColor: AppColors.darkGreen,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.darkGreen,
+        ),
       ),
+
       home: const MaintenancePage(),
     );
   }
