@@ -57,33 +57,30 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 'You\'re signed in!',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 user.email ?? 'No email',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                  ?.copyWith(color: AppColors.green2),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: AppColors.green2),
               ),
               const SizedBox(height: 4),
               Text(
                 'UID: ${user.uid}',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                  ?.copyWith(color: AppColors.middleground),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.middleground),
               ),
               const SizedBox(height: 32),
               FilledButton.icon(
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const OnboardingScreen(),
+                      builder: (_) => OnboardingScreen(user: user),
                     ),
                   );
                 },
@@ -92,10 +89,13 @@ class HomeScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.darkGreen,
                   foregroundColor: AppColors.background,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),

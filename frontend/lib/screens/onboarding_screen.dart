@@ -1,17 +1,20 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../app_colors.dart';
+import '../services/onboarding_flow_state.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final User? user;
+
+  const OnboardingScreen({super.key, this.user});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  int _state = 1;
-  bool _usedInviteCode = false;
+  OnboardingFlowState _flow = const OnboardingFlowState();
 
   final _inviteCodeController = TextEditingController();
   final _buildingAddressController = TextEditingController();
@@ -20,6 +23,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _phoneController = TextEditingController();
   final _aptController = TextEditingController();
   String? _selectedManagementRole;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillName(widget.user);
+  }
+
+  void _prefillName(User? user) {
+    if (user == null) return;
+
+    final displayName = user.displayName?.trim();
+    if (displayName != null && displayName.isNotEmpty) {
+      final nameParts = displayName
+          .split(RegExp(r'\s+'))
+          .where((part) => part.isNotEmpty)
+          .toList();
+
+      if (_firstNameController.text.isEmpty && nameParts.isNotEmpty) {
+        _firstNameController.text = nameParts.first;
+      }
+
+      if (_lastNameController.text.isEmpty && nameParts.length > 1) {
+        _lastNameController.text = nameParts.sublist(1).join(' ');
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -32,35 +61,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _goTo(int state) => setState(() => _state = state);
+  void _updateFlow(OnboardingFlowState nextFlow) {
+    setState(() => _flow = nextFlow);
+  }
 
   void _goBack() {
-    switch (_state) {
-      case 1: // This shouldnt happen
-        Navigator.of(context).pop();
-      case 2:
-        _goTo(1);
-      case 3:
-        _goTo(2);
-      case 4:
-        _goTo(_usedInviteCode ? 3 : 7);
-      case 5:
-        _goTo(4);
-      case 6:
-        _goTo(5);
-      case 7:
-        _goTo(2);
-      case 8:
-        _goTo(1);
-      case 9:
-        _goTo(8);
-      case 10:
-        _goTo(9);
-      case 11:
-        _goTo(10);
-      default:
-        _goTo(1);
+    if (_flow.step == 1) {
+      Navigator.of(context).pop();
+      return;
     }
+
+    _updateFlow(_flow.goBack());
   }
 
   Widget _backButton({bool showLabel = true}) {
@@ -77,18 +88,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-      ),
+      appBar: AppBar(automaticallyImplyLeading: false),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _buildState(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_flow.errorMessage != null)
+                    _errorBanner(_flow.errorMessage!),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: _buildState(),
+                  ),
+                ],
               ),
             ),
           ),
@@ -100,7 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // We should add state(s) for errors
 
   Widget _buildState() {
-    return switch (_state) {
+    return switch (_flow.step) {
       1 => _stateRoleSelection(),
       2 => _stateResidentWelcome(),
       3 => _stateInviteCode(),
@@ -116,27 +132,70 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     };
   }
 
-  Widget _header({required IconData icon, required String title, String? subtitle}) {
+  Widget _errorBanner(String message) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(
+            const Color(0x26C62828),
+            AppColors.background,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Color.alphaBlend(
+              const Color(0x66C62828),
+              AppColors.middleground,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: AppColors.darkGreen,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: AppColors.darkGreen,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _header({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+  }) {
     return Column(
       children: [
         Icon(icon, size: 64, color: AppColors.darkGreen),
         const SizedBox(height: 16),
         Text(
           title,
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: AppColors.green2),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.green2),
             textAlign: TextAlign.center,
           ),
         ],
@@ -157,7 +216,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           subtitle: 'Select your role to continue',
         ),
         FilledButton.icon(
-          onPressed: () => _goTo(2),
+          onPressed: () => _updateFlow(_flow.goTo(2)),
           icon: const Icon(Icons.home_outlined),
           label: const Text('Resident'),
           style: FilledButton.styleFrom(
@@ -166,7 +225,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 12),
         FilledButton.icon(
-          onPressed: () => _goTo(8),
+          onPressed: () => _updateFlow(_flow.goTo(8)),
           icon: const Icon(Icons.business_outlined),
           label: const Text('Management'),
           style: FilledButton.styleFrom(
@@ -189,10 +248,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           subtitle: 'How will you be joining?',
         ),
         FilledButton.icon(
-          onPressed: () {
-            _usedInviteCode = true;
-            _goTo(3);
-          },
+          onPressed: () => _updateFlow(_flow.state3Invite(true, 3)),
           icon: const Icon(Icons.vpn_key_outlined),
           label: const Text('I have an invite code'),
           style: FilledButton.styleFrom(
@@ -201,10 +257,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 12),
         FilledButton.icon(
-          onPressed: () {
-            _usedInviteCode = false;
-            _goTo(7);
-          },
+          onPressed: () => _updateFlow(_flow.state3Invite(false, 7)),
           icon: const Icon(Icons.send_outlined),
           label: const Text('Resident Request'),
           style: FilledButton.styleFrom(
@@ -243,9 +296,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _goTo(4),
+                onPressed: () => _updateFlow(_flow.goTo(4)),
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 16,
+                  ),
                 ),
                 child: const Text('Enter'),
               ),
@@ -278,13 +334,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.location_on, color: AppColors.darkGreen, size: 20),
+                  const Icon(
+                    Icons.location_on,
+                    color: AppColors.darkGreen,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
-                  Text(
-                    '123 Example St, New York, 12345',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                  Expanded(
+                    child: Text(
+                      _buildingAddressController.text.trim(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -296,10 +358,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.middleground.withAlpha(25),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.middleground.withAlpha(80)),
+                  border: Border.all(
+                    color: AppColors.middleground.withAlpha(80),
+                  ),
                 ),
                 child: const Center(
-                  child: Icon(Icons.map_outlined, size: 48, color: AppColors.green2),
+                  child: Icon(
+                    Icons.map_outlined,
+                    size: 48,
+                    color: AppColors.green2,
+                  ),
                 ),
               ),
             ],
@@ -309,18 +377,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         Row(
           children: [
             OutlinedButton.icon(
-              onPressed: () => _goTo(_usedInviteCode ? 3 : 7),
+              onPressed: () =>
+                  _updateFlow(_flow.goTo(_flow.usedInviteCode ? 3 : 7)),
               icon: const Icon(Icons.arrow_back),
               label: const Text('No'),
               style: OutlinedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _goTo(5),
+                onPressed: () => _updateFlow(_flow.goTo(5)),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -383,10 +454,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 8),
         Text(
           '*We do not display sensitive information',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: AppColors.green2),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.green2),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -396,7 +466,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _goTo(6),
+                onPressed: () => _updateFlow(_flow.goTo(6)),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -411,14 +481,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   // State 6: Complete Resident Onboarding
   Widget _stateCompleted() {
-    final isInvite = _usedInviteCode;
+    final isInvite = _flow.usedInviteCode;
     return Column(
       key: const ValueKey(6),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _header(
-          icon: isInvite ? Icons.check_circle_outline : Icons.mark_email_read_outlined,
-          title: isInvite ? "You're all set! 👏" : "Request sent to your building!",
+          icon: isInvite
+              ? Icons.check_circle_outline
+              : Icons.mark_email_read_outlined,
+          title: isInvite
+              ? "You're all set! 👏"
+              : "Request sent to your building!",
         ),
         Row(
           children: [
@@ -450,6 +524,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         TextField(
           controller: _buildingAddressController,
+          onChanged: (value) {
+            if (_flow.errorMessage != null && value.trim().isNotEmpty) {
+              _updateFlow(_flow.clearError());
+            }
+          },
           decoration: const InputDecoration(
             labelText: 'Building address',
             prefixIcon: Icon(Icons.location_on_outlined),
@@ -463,7 +542,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _goTo(4),
+                onPressed: () => _updateFlow(
+                  _flow.state8Address(_buildingAddressController.text, 9),
+                  // Todo: reconsider?
+                ),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -476,7 +558,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // State 8: Management 
+  // State 8: Management
   Widget _stateManagementAddress() {
     return Column(
       key: const ValueKey(8),
@@ -489,6 +571,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         TextField(
           controller: _buildingAddressController,
+          onChanged: (value) {
+            if (_flow.errorMessage != null && value.trim().isNotEmpty) {
+              _updateFlow(_flow.clearError());
+            }
+          },
           decoration: const InputDecoration(
             labelText: 'Building address',
             prefixIcon: Icon(Icons.location_on_outlined),
@@ -502,7 +589,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _goTo(9),
+                onPressed: () => _updateFlow(
+                  _flow.state8Address(_buildingAddressController.text, 9),
+                ),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -586,10 +675,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 8),
         Text(
           '*We do not display sensitive information',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: AppColors.green2),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.green2),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -599,7 +687,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _goTo(10),
+                onPressed: () => _updateFlow(_flow.goTo(10)),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -639,9 +727,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Text(
                   'FLK-ABC123',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2,
-                      ),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
@@ -668,7 +756,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Center(
-              child: Icon(Icons.qr_code_2, size: 120, color: AppColors.darkGreen),
+              child: Icon(
+                Icons.qr_code_2,
+                size: 120,
+                color: AppColors.darkGreen,
+              ),
             ),
           ),
         ),
@@ -679,7 +771,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _goTo(11),
+                onPressed: () => _updateFlow(_flow.goTo(11)),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -699,10 +791,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       key: const ValueKey(11),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _header(
-          icon: Icons.check_circle_outline,
-          title: "You're all set! 👏",
-        ),
+        _header(icon: Icons.check_circle_outline, title: "You're all set! 👏"),
         Row(
           children: [
             Expanded(
