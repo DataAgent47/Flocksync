@@ -2,21 +2,36 @@ class OnboardingFlowState {
   const OnboardingFlowState({
     this.step = 1,
     this.usedInviteCode = false,
+    this.isManagement = false,
     this.errorMessage,
   });
 
   final int step;
   final bool usedInviteCode;
+  final bool isManagement;
   final String? errorMessage;
 
   OnboardingFlowState goTo(int nextStep) {
-    return OnboardingFlowState(step: nextStep, usedInviteCode: usedInviteCode);
+    return OnboardingFlowState(
+      step: nextStep,
+      usedInviteCode: usedInviteCode,
+      isManagement: isManagement,
+    );
+  }
+
+  OnboardingFlowState startResident() {
+    return const OnboardingFlowState(step: 2, usedInviteCode: false);
+  }
+
+  OnboardingFlowState startManagement() {
+    return const OnboardingFlowState(step: 8, isManagement: true);
   }
 
   OnboardingFlowState state3Invite(bool nextUsedInviteCode, int nextStep) {
     return OnboardingFlowState(
       step: nextStep,
       usedInviteCode: nextUsedInviteCode,
+      isManagement: false,
     );
   }
 
@@ -25,11 +40,16 @@ class OnboardingFlowState {
       return OnboardingFlowState(
         step: step,
         usedInviteCode: usedInviteCode,
+        isManagement: isManagement,
         errorMessage: 'Please enter your building address.',
       );
     }
 
-    return OnboardingFlowState(step: nextStep, usedInviteCode: usedInviteCode);
+    return OnboardingFlowState(
+      step: nextStep,
+      usedInviteCode: usedInviteCode,
+      isManagement: isManagement,
+    );
   }
 
   OnboardingFlowState clearError() {
@@ -37,14 +57,18 @@ class OnboardingFlowState {
       return this;
     }
 
-    return OnboardingFlowState(step: step, usedInviteCode: usedInviteCode);
+    return OnboardingFlowState(
+      step: step,
+      usedInviteCode: usedInviteCode,
+      isManagement: isManagement,
+    );
   }
 
   OnboardingFlowState goBack() {
     return switch (step) {
       2 => goTo(1),
       3 => goTo(2),
-      4 => goTo(usedInviteCode ? 3 : 7),
+      4 => goTo(isManagement ? 8 : (usedInviteCode ? 3 : 7)),
       5 => goTo(4),
       6 => goTo(5),
       7 => goTo(2),

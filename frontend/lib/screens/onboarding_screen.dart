@@ -22,6 +22,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _aptController = TextEditingController();
+
+  final _inviteCodeFormKey = GlobalKey<FormState>();
+  final _addressFormKey = GlobalKey<FormState>();
   String? _selectedManagementRole;
   bool _managementRoleVerified = false;
 
@@ -64,6 +67,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _updateFlow(OnboardingFlowState nextFlow) {
     setState(() => _flow = nextFlow);
+  }
+
+  // Submit - Empty field handlers
+  void _submitAddress({required int nextStep}) {
+    final isValid = _addressFormKey.currentState?.validate() ?? false;
+    if (!isValid) {
+      return;
+    }
+
+    _updateFlow(_flow.goTo(nextStep));
+  }
+  void _submitInviteCode({required int nextStep}) {
+    final isValid = _inviteCodeFormKey.currentState?.validate() ?? false;
+    if (!isValid) {
+      return;
+    }
+
+    _updateFlow(_flow.goTo(nextStep));
   }
 
   void _goBack() {
@@ -218,7 +239,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           subtitle: 'Select your role to continue',
         ),
         FilledButton.icon(
-          onPressed: () => _updateFlow(_flow.goTo(2)),
+          onPressed: () => _updateFlow(_flow.startResident()),
           icon: const Icon(Icons.home_outlined),
           label: const Text('Resident'),
           style: FilledButton.styleFrom(
@@ -227,7 +248,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 12),
         FilledButton.icon(
-          onPressed: () => _updateFlow(_flow.goTo(8)),
+          onPressed: () => _updateFlow(_flow.startManagement()),
           icon: const Icon(Icons.business_outlined),
           label: const Text('Management'),
           style: FilledButton.styleFrom(
@@ -283,12 +304,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           title: "Let's get you connected",
           subtitle: 'Enter the invite code you received',
         ),
-        TextField(
-          controller: _inviteCodeController,
-          decoration: const InputDecoration(
-            labelText: 'Invite code',
-            prefixIcon: Icon(Icons.vpn_key_outlined),
-            border: OutlineInputBorder(),
+        Form(
+          key: _inviteCodeFormKey,
+          child: TextFormField(
+            controller: _inviteCodeController,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return 'Invite code is required';
+              }
+              return null;
+            },
+            decoration: const InputDecoration(
+              labelText: 'Invite code',
+              prefixIcon: Icon(Icons.vpn_key_outlined),
+              border: OutlineInputBorder(),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -298,7 +329,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _updateFlow(_flow.goTo(4)),
+                onPressed: () => _submitInviteCode(nextStep: 4),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     vertical: 14,
@@ -379,8 +410,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         Row(
           children: [
             OutlinedButton.icon(
-              onPressed: () =>
-                  _updateFlow(_flow.goTo(_flow.usedInviteCode ? 3 : 7)),
+              onPressed: () => _updateFlow(
+                _flow.goTo(_flow.isManagement ? 8 : (_flow.usedInviteCode ? 3 : 7)),
+              ),
               icon: const Icon(Icons.arrow_back),
               label: const Text('No'),
               style: OutlinedButton.styleFrom(
@@ -393,7 +425,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _updateFlow(_flow.goTo(5)),
+                onPressed: () => _updateFlow(_flow.goTo(_flow.isManagement ? 9 : 5)),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -524,17 +556,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           title: "Let's get you connected",
           subtitle: 'Enter your building address',
         ),
-        TextField(
-          controller: _buildingAddressController,
-          onChanged: (value) {
-            if (_flow.errorMessage != null && value.trim().isNotEmpty) {
-              _updateFlow(_flow.clearError());
-            }
-          },
-          decoration: const InputDecoration(
-            labelText: 'Building address',
-            prefixIcon: Icon(Icons.location_on_outlined),
-            border: OutlineInputBorder(),
+        Form(
+          key: _addressFormKey,
+          child: TextFormField(
+            controller: _buildingAddressController,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return 'Building address is required.';
+              }
+              return null;
+            },
+            decoration: const InputDecoration(
+              labelText: 'Building address',
+              prefixIcon: Icon(Icons.location_on_outlined),
+              border: OutlineInputBorder(),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -544,10 +581,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _updateFlow(
-                  _flow.state8Address(_buildingAddressController.text, 9),
-                  // Todo: reconsider?
-                ),
+                onPressed: () => _submitAddress(nextStep: 4),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -571,17 +605,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           title: 'Management Onboarding',
           subtitle: 'Enter your building address',
         ),
-        TextField(
-          controller: _buildingAddressController,
-          onChanged: (value) {
-            if (_flow.errorMessage != null && value.trim().isNotEmpty) {
-              _updateFlow(_flow.clearError());
-            }
-          },
-          decoration: const InputDecoration(
-            labelText: 'Building address',
-            prefixIcon: Icon(Icons.location_on_outlined),
-            border: OutlineInputBorder(),
+        Form(
+          key: _addressFormKey,
+          child: TextFormField(
+            controller: _buildingAddressController,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return 'Building address is required.';
+              }
+              return null;
+            },
+            decoration: const InputDecoration(
+              labelText: 'Building address',
+              prefixIcon: Icon(Icons.location_on_outlined),
+              border: OutlineInputBorder(),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -591,9 +630,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _updateFlow(
-                  _flow.state8Address(_buildingAddressController.text, 9),
-                ),
+                onPressed: () => _submitAddress(nextStep: 4),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -607,7 +644,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // State 9: Management Details
-
   Widget _stateManagementDetails() {
     const roles = [
       'Building Owner',
