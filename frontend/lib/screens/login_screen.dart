@@ -105,6 +105,37 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() {
+        _errorMessage = 'Enter your email above first to reset your password.';
+        _infoMessage = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _infoMessage = null;
+    });
+
+    try {
+      await _authService.forgotPassword(email: email);
+      if (!mounted) return;
+      setState(() {
+        _infoMessage = 'Password reset email sent to $email.';
+        _infoIsError = false;
+      });
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMessage = _friendlyError(e.code));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   String _friendlyError(String code) {
     switch (code) {
       case 'user-not-found':
@@ -343,10 +374,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          "Don't have an account? ",
-                          style: const TextStyle(color: AppColors.green2),
-                        ),
                         GestureDetector(
                           onTap: () => Navigator.push(
                             context,
@@ -356,6 +383,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: const Text(
                             'Sign up',
+                            style: TextStyle(
+                              color: AppColors.darkGreen,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            '•',
+                            style: TextStyle(color: AppColors.green2),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _isLoading ? null : _forgotPassword,
+                          child: const Text(
+                            'Forgot Password',
                             style: TextStyle(
                               color: AppColors.darkGreen,
                               fontWeight: FontWeight.w600,

@@ -38,6 +38,10 @@ class AuthService {
     }
   }
 
+  Future<void> forgotPassword({required String email}) async {
+    await _auth.sendPasswordResetEmail(email: email.trim());
+  }
+
   // GOOGLE
 
   Future<UserCredential> signInWithGoogle() async {
