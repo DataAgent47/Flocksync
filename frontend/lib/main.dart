@@ -1,121 +1,260 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'core/theme/flock_theme.dart';
+import 'firebase_options.dart';
+import 'features/forum/screens/forum_feed_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(const FlockSyncApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class FlockSyncApp extends StatelessWidget {
+  const FlockSyncApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'FlockSync',
+      debugShowCheckedModeBanner: false,
+      theme: flockTheme(),
+      home: const MainShell(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+// ─── Main shell with bottom nav ────────────────────────────────────────────────
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MainShell extends StatefulWidget {
+  const MainShell({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainShell> createState() => _MainShellState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MainShellState extends State<MainShell> {
+  int _currentIndex = 2; // start on Forums tab for testing
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  // TODO: replace with real auth values once auth feature is merged
+  static const _mockUserId = 'dev_user_001';
+  static const _mockUserName = 'Dev User';
+  static const _mockBuildingId = 'building_test_001';
+  static const _mockIsManagement = false;
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          const _PlaceholderScreen(label: 'Dashboard'),
+          const _PlaceholderScreen(label: 'Calendar'),
+          _ForumsLandingScreen(
+            userId: _mockUserId,
+            userName: _mockUserName,
+            buildingId: _mockBuildingId,
+            isManagement: _mockIsManagement,
+          ),
+          const _PlaceholderScreen(label: 'Settings'),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      bottomNavigationBar: _FlockBottomNav(
+        currentIndex: _currentIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
+      ),
+    );
+  }
+}
+
+// ─── Forums landing — matches your mockup ──────────────────────────────────────
+
+class _ForumsLandingScreen extends StatelessWidget {
+  final String userId;
+  final String userName;
+  final String buildingId;
+  final bool isManagement;
+
+  const _ForumsLandingScreen({
+    required this.userId,
+    required this.userName,
+    required this.buildingId,
+    required this.isManagement,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlockColors.cream,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Forums',
+                style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: FlockColors.darkGreen,
+                    letterSpacing: -0.5),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Share information and connect with your neighbors!',
+                style: TextStyle(
+                    fontSize: 16,
+                    color: FlockColors.textSecondary,
+                    height: 1.4),
+              ),
+              const SizedBox(height: 48),
+
+              // Building forum — active
+              _ForumTile(
+                label: 'From your building',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ForumFeedScreen(
+                      buildingId: buildingId,
+                      currentUserId: userId,
+                      currentUserName: userName,
+                      isManagement: isManagement,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Zip code forum — coming soon
+              const _ForumTile(
+                label: 'From your zip code',
+                onTap: null,
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+}
+
+class _ForumTile extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+
+  const _ForumTile({super.key, required this.label, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedOpacity(
+        opacity: onTap == null ? 0.45 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          decoration: BoxDecoration(
+            color: FlockColors.tan,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: FlockColors.darkGreen),
+              ),
+              const Icon(Icons.arrow_forward,
+                  color: FlockColors.darkGreen, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Bottom nav ────────────────────────────────────────────────────────────────
+
+class _FlockBottomNav extends StatelessWidget {
+  final int currentIndex;
+  final void Function(int) onTap;
+
+  const _FlockBottomNav({required this.currentIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: onTap,
+      backgroundColor: FlockColors.cream,
+      selectedItemColor: FlockColors.darkGreen,
+      unselectedItemColor: FlockColors.textMuted,
+      selectedFontSize: 11,
+      unselectedFontSize: 11,
+      type: BottomNavigationBarType.fixed,
+      elevation: 0,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: 'Dashboard',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today_outlined),
+          activeIcon: Icon(Icons.calendar_today),
+          label: 'Calendar',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.forum_outlined),
+          activeIcon: Icon(Icons.forum),
+          label: 'Forums',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.settings_outlined),
+          activeIcon: Icon(Icons.settings),
+          label: 'Settings',
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Placeholder for unbuilt tabs ──────────────────────────────────────────────
+
+class _PlaceholderScreen extends StatelessWidget {
+  final String label;
+  const _PlaceholderScreen({super.key, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlockColors.cream,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.construction_outlined,
+                size: 48, color: FlockColors.tan),
+            const SizedBox(height: 16),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: FlockColors.darkGreen)),
+            const SizedBox(height: 8),
+            const Text('Coming soon',
+                style: TextStyle(
+                    color: FlockColors.textSecondary, fontSize: 14)),
+          ],
+        ),
       ),
     );
   }
