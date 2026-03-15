@@ -9,8 +9,12 @@ class FlockColors {
   static const cream = Color(0xFFFEFAE0);
 
   // Derived
-  static const cardBackground = Color(0xFFEEEACC);   // slightly darker cream for cards
-  static const buttonBackground = Color(0xFFB1AB86); // tan buttons like the mockup
+  static const cardBackground = Color(
+    0xFFEEEACC,
+  ); // slightly darker cream for cards
+  static const buttonBackground = Color(
+    0xFFB1AB86,
+  ); // tan buttons like the mockup
   static const divider = Color(0xFFCCC9A8);
   static const textPrimary = Color(0xFF0A400C);
   static const textSecondary = Color(0xFF819067);
@@ -51,9 +55,7 @@ ThemeData flockTheme() {
     cardTheme: CardThemeData(
       color: FlockColors.cardBackground,
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
     chipTheme: ChipThemeData(
       backgroundColor: FlockColors.tan.withValues(alpha: 0.25),
@@ -69,8 +71,10 @@ ThemeData flockTheme() {
       filled: true,
       fillColor: FlockColors.cardBackground,
       labelStyle: const TextStyle(color: FlockColors.midGreen),
-      hintStyle:
-          TextStyle(color: FlockColors.textMuted, fontStyle: FontStyle.italic),
+      hintStyle: TextStyle(
+        color: FlockColors.textMuted,
+        fontStyle: FontStyle.italic,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: FlockColors.tan),
@@ -81,18 +85,18 @@ ThemeData flockTheme() {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:
-            const BorderSide(color: FlockColors.darkGreen, width: 1.5),
+        borderSide: const BorderSide(color: FlockColors.darkGreen, width: 1.5),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: FlockColors.darkGreen,
         foregroundColor: FlockColors.cream,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle:
-            const TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+        ),
       ),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -107,29 +111,41 @@ ThemeData flockTheme() {
     ),
     textTheme: const TextTheme(
       headlineLarge: TextStyle(
-          color: FlockColors.darkGreen,
-          fontWeight: FontWeight.w700,
-          fontSize: 28,
-          letterSpacing: -0.5),
+        color: FlockColors.darkGreen,
+        fontWeight: FontWeight.w700,
+        fontSize: 28,
+        letterSpacing: -0.5,
+      ),
       headlineMedium: TextStyle(
-          color: FlockColors.darkGreen,
-          fontWeight: FontWeight.w700,
-          fontSize: 22),
+        color: FlockColors.darkGreen,
+        fontWeight: FontWeight.w700,
+        fontSize: 22,
+      ),
       titleLarge: TextStyle(
-          color: FlockColors.darkGreen,
-          fontWeight: FontWeight.w700,
-          fontSize: 18),
+        color: FlockColors.darkGreen,
+        fontWeight: FontWeight.w700,
+        fontSize: 18,
+      ),
       titleMedium: TextStyle(
-          color: FlockColors.darkGreen,
-          fontWeight: FontWeight.w600,
-          fontSize: 16),
-      bodyLarge: TextStyle(color: FlockColors.darkGreen, fontSize: 15, height: 1.5),
-      bodyMedium:
-          TextStyle(color: FlockColors.darkGreen, fontSize: 14, height: 1.4),
+        color: FlockColors.darkGreen,
+        fontWeight: FontWeight.w600,
+        fontSize: 16,
+      ),
+      bodyLarge: TextStyle(
+        color: FlockColors.darkGreen,
+        fontSize: 15,
+        height: 1.5,
+      ),
+      bodyMedium: TextStyle(
+        color: FlockColors.darkGreen,
+        fontSize: 14,
+        height: 1.4,
+      ),
       labelLarge: TextStyle(
-          color: FlockColors.darkGreen,
-          fontWeight: FontWeight.w600,
-          fontSize: 13),
+        color: FlockColors.darkGreen,
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
+      ),
     ),
   );
 }
