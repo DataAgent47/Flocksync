@@ -1,0 +1,29 @@
+# IDE - VSCode
+.vscode/*
+*.code-workspace
+
+# IDE - IntelliJ / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+*.swp
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+*~
+.directory
+
+# Deployment
+.firebase/
+.vercel/
+dist/
+tmp/
