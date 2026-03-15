@@ -20,6 +20,11 @@ class FlockColors {
   static const textSecondary = Color(0xFF819067);
   static const textMuted = Color(0xFFADAA88);
   static const errorRed = Color(0xFF8B2E00);
+
+  // Aliases to match AppColors naming from login-demo branch
+  static const background = cream;
+  static const middleground = tan;
+  static const green2 = midGreen;
 }
 
 // ─── ThemeData ────────────────────────────────────────────────────────────────
@@ -149,3 +154,6 @@ ThemeData flockTheme() {
     ),
   );
 }
+// Alias for backwards compatibility with login-demo branch
+// Teammates can use AppColors.darkGreen or FlockColors.darkGreen — both work
+typedef AppColors = FlockColors;
