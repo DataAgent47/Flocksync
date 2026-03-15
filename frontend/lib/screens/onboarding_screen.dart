@@ -21,6 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _contactEmailController = TextEditingController();
   final _aptController = TextEditingController();
 
   final _inviteCodeFormKey = GlobalKey<FormState>();
@@ -61,6 +62,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
+    _contactEmailController.dispose();
     _aptController.dispose();
     super.dispose();
   }
@@ -478,6 +480,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 16),
         TextField(
+          controller: _contactEmailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Contact Email',
+            prefixIcon: Icon(Icons.email_outlined),
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
           controller: _aptController,
           decoration: const InputDecoration(
             labelText: 'Apt Number',
@@ -698,6 +710,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           decoration: const InputDecoration(
             labelText: 'Phone Number',
             prefixIcon: Icon(Icons.phone_outlined),
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _contactEmailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: 'Contact Email',
+            prefixIcon: Icon(Icons.email_outlined),
             border: OutlineInputBorder(),
           ),
         ),
