@@ -1,7 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../app_colors.dart';
+import '../services/maps_service.dart';
 import '../services/onboarding_flow_state.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -26,13 +29,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final _inviteCodeFormKey = GlobalKey<FormState>();
   final _addressFormKey = GlobalKey<FormState>();
+  late final AddressLookupController _addressLookup;
+
   String? _selectedManagementRole;
   bool _managementRoleVerified = false;
 
   @override
   void initState() {
     super.initState();
+    _addressLookup = AddressLookupController()
+      ..addListener(_handleAddressLookupChanged);
     _prefillName(widget.user);
+  }
+
+  void _handleAddressLookupChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _prefillName(User? user) {
@@ -57,6 +69,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   void dispose() {
+    _addressLookup
+      ..removeListener(_handleAddressLookupChanged)
+      ..dispose();
     _inviteCodeController.dispose();
     _buildingAddressController.dispose();
     _firstNameController.dispose();
@@ -71,15 +86,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _flow = nextFlow);
   }
 
-  // Submit - Empty field handlers
-  void _submitAddress({required int nextStep}) {
+  // Helper functions for address state transitions
+  Future<void> _submitAddress({required int nextStep}) async {
     final isValid = _addressFormKey.currentState?.validate() ?? false;
     if (!isValid) {
       return;
     }
 
+    final verified = await _addressLookup.verifyAddressInput(
+      _buildingAddressController.text,
+    );
+    if (!mounted || verified == null) {
+      return;
+    }
+
+    _buildingAddressController.text = verified.formattedAddress;
     _updateFlow(_flow.goTo(nextStep));
   }
+
+  void _selectAddressSuggestion(AddressSuggestion suggestion) {
+    _buildingAddressController.text = suggestion.displayName;
+    _addressLookup.selectSuggestion(suggestion);
+  }
+
+  Widget _addressSuggestionsList() {
+    if (_addressLookup.isLoadingSuggestions) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 12),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_addressLookup.suggestions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      decoration: BoxDecoration(
+        color: AppColors.middleground.withAlpha(28),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.middleground.withAlpha(95)),
+      ),
+      child: Column(
+        children: _addressLookup.suggestions
+            .map(
+              (suggestion) => ListTile(
+                dense: true,
+                leading: const Icon(Icons.location_on_outlined),
+                title: Text(
+                  suggestion.displayName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => _selectAddressSuggestion(suggestion),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
   void _submitInviteCode({required int nextStep}) {
     final isValid = _inviteCodeFormKey.currentState?.validate() ?? false;
     if (!isValid) {
@@ -386,25 +453,66 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              // Mock map
-              Container(
-                height: 160,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.middleground.withAlpha(25),
+              if (_addressLookup.verifiedAddress != null)
+                ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.middleground.withAlpha(80),
+                  child: SizedBox(
+                    height: 180,
+                    width: double.infinity,
+                    child: FlutterMap(
+                      options: MapOptions(
+                        initialCenter: LatLng(
+                          _addressLookup.verifiedAddress!.latitude,
+                          _addressLookup.verifiedAddress!.longitude,
+                        ),
+                        initialZoom: 16,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: MapTileConfig.urlTemplate,
+                          userAgentPackageName:
+                              MapTileConfig.userAgentPackageName,
+                        ),
+                        RichAttributionWidget(
+                          showFlutterMapAttribution: false,
+                          attributions: [
+                            TextSourceAttribution(MapTileConfig.attribution),
+                          ],
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: LatLng(
+                                _addressLookup.verifiedAddress!.latitude,
+                                _addressLookup.verifiedAddress!.longitude,
+                              ),
+                              width: 44,
+                              height: 44,
+                              child: const Icon(
+                                Icons.location_pin,
+                                color: AppColors.darkGreen,
+                                size: 36,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.map_outlined,
-                    size: 48,
-                    color: AppColors.green2,
+                )
+              else
+                Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.middleground.withAlpha(25),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.middleground.withAlpha(80),
+                    ),
                   ),
+                  child: const Center(child: Text('Address not verified yet')),
                 ),
-              ),
             ],
           ),
         ),
@@ -413,7 +521,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             OutlinedButton.icon(
               onPressed: () => _updateFlow(
-                _flow.goTo(_flow.isManagement ? 8 : (_flow.usedInviteCode ? 3 : 7)),
+                _flow.goTo(
+                  _flow.isManagement ? 8 : (_flow.usedInviteCode ? 3 : 7),
+                ),
               ),
               icon: const Icon(Icons.arrow_back),
               label: const Text('No'),
@@ -427,7 +537,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _updateFlow(_flow.goTo(_flow.isManagement ? 9 : 5)),
+                onPressed: () =>
+                    _updateFlow(_flow.goTo(_flow.isManagement ? 9 : 5)),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -557,22 +668,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // State 7: Resident Request using Address
-  Widget _stateResidentRequest() {
+  // Helper function for states 7 and 8
+  Widget _addressEntryForm() {
     return Column(
-      key: const ValueKey(7),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _header(
-          icon: Icons.link_outlined,
-          title: "Let's get you connected",
-          subtitle: 'Enter your building address',
-        ),
         Form(
           key: _addressFormKey,
           child: TextFormField(
             controller: _buildingAddressController,
             autovalidateMode: AutovalidateMode.onUserInteraction,
+            onChanged: _addressLookup.onAddressChanged,
             validator: (v) {
               if (v == null || v.trim().isEmpty) {
                 return 'Building address is required.';
@@ -586,6 +692,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
         ),
+        _addressSuggestionsList(),
+        if (_addressLookup.lookupError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _addressLookup.lookupError!,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Colors.red.shade700),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // State 7: Resident Request using Address
+  Widget _stateResidentRequest() {
+    return Column(
+      key: const ValueKey(7),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _header(
+          icon: Icons.link_outlined,
+          title: "Let's get you connected",
+          subtitle: 'Enter your building address',
+        ),
+        _addressEntryForm(),
         const SizedBox(height: 24),
         Row(
           children: [
@@ -593,11 +725,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _submitAddress(nextStep: 4),
+                onPressed: _addressLookup.isVerifying
+                    ? null
+                    : () => _submitAddress(nextStep: 4),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Enter'),
+                child: _addressLookup.isVerifying
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Enter'),
               ),
             ),
           ],
@@ -617,24 +757,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           title: 'Management Onboarding',
           subtitle: 'Enter your building address',
         ),
-        Form(
-          key: _addressFormKey,
-          child: TextFormField(
-            controller: _buildingAddressController,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) {
-                return 'Building address is required.';
-              }
-              return null;
-            },
-            decoration: const InputDecoration(
-              labelText: 'Building address',
-              prefixIcon: Icon(Icons.location_on_outlined),
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ),
+        _addressEntryForm(),
         const SizedBox(height: 24),
         Row(
           children: [
@@ -642,11 +765,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _submitAddress(nextStep: 4),
+                onPressed: _addressLookup.isVerifying
+                    ? null
+                    : () => _submitAddress(nextStep: 4),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Next'),
+                child: _addressLookup.isVerifying
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Next'),
               ),
             ),
           ],
