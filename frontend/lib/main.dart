@@ -48,7 +48,12 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          const _PlaceholderScreen(label: 'Dashboard'),
+          _DashboardScreen(
+            userId: _mockUserId,
+            userName: _mockUserName,
+            buildingId: _mockBuildingId,
+            isManagement: _mockIsManagement,
+          ),
           const _PlaceholderScreen(label: 'Calendar'),
           _ForumsLandingScreen(
             userId: _mockUserId,
@@ -62,6 +67,101 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: _FlockBottomNav(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
+      ),
+    );
+  }
+}
+
+// ─── Dashboard — matches your mockup ──────────────────────────────────────
+// You can run 'flutter run -d web-server' to debug.
+class _DashboardScreen extends StatelessWidget {
+  final String userId;
+  final String userName;
+  final String buildingId;
+  final bool isManagement;
+
+  const _DashboardScreen({
+    required this.userId,
+    required this.userName,
+    required this.buildingId,
+    required this.isManagement,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: FlockColors.cream,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Welcome!',
+                style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: FlockColors.darkGreen,
+                    letterSpacing: -0.5),
+              ),
+              const SizedBox(height: 8),
+
+              const Text(
+                'Navigate FlockSync and see building announcements, upcming events, and more!',
+                style: TextStyle(
+                    fontSize: 16,
+                    color: FlockColors.textSecondary,
+                    height: 1.4),
+              ),
+              const SizedBox(height: 12),
+
+              // Other dashboard contentr
+              const AnnouncementCard(
+                title: 'Important Update',
+                message: 'Check out the new features!',
+                icon: Icons.campaign,
+              ),
+              const SizedBox(height: 8),
+
+              const Text(
+                'Building Announcements',
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: FlockColors.darkGreen,
+                    letterSpacing: -0.5),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AnnouncementCard extends StatelessWidget {
+  final String title;
+  final String message;
+  final IconData icon;
+
+  const AnnouncementCard({
+    Key? key,
+    required this.title,
+    required this.message,
+    required this.icon,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      // ... your announcement UI here ...
+      child: ListTile(
+        leading: Icon(icon),
+        title: Text(title),
+        subtitle: Text(message),
+        // ... etc.
       ),
     );
   }
@@ -145,7 +245,7 @@ class _ForumTile extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _ForumTile({super.key, required this.label, this.onTap});
+  const _ForumTile({required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +331,7 @@ class _FlockBottomNav extends StatelessWidget {
 
 class _PlaceholderScreen extends StatelessWidget {
   final String label;
-  const _PlaceholderScreen({super.key, required this.label});
+  const _PlaceholderScreen({required this.label});
 
   @override
   Widget build(BuildContext context) {
