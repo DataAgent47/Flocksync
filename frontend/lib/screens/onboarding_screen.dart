@@ -603,7 +603,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         TextField(
           controller: _aptController,
           decoration: const InputDecoration(
-            labelText: 'Apt Number',
+            labelText: 'Apartment Number',
             prefixIcon: Icon(Icons.door_front_door_outlined),
             border: OutlineInputBorder(),
           ),
@@ -858,7 +858,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         TextField(
           controller: _aptController,
           decoration: const InputDecoration(
-            labelText: 'Apt Number',
+            labelText: 'Apartment Number',
             prefixIcon: Icon(Icons.door_front_door_outlined),
             border: OutlineInputBorder(),
           ),
