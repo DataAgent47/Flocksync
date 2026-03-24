@@ -1,3 +1,4 @@
+import 'package:flocksync/models/forum_post.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/flock_theme.dart';
@@ -87,56 +88,166 @@ class _DashboardScreen extends StatelessWidget {
     required this.isManagement,
   });
 
+  /**
+   * Contains the containers and elements of the Dashboard:
+   *  - Building Announcements
+   *  - Upcoming Events
+   *  - Calendar
+   *  - Forum Activity
+   */
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: FlockColors.cream,
+      backgroundColor: FlockColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+        child: SingleChildScrollView(
+          // Padding for the top left, top, and right.
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          // Elements are contained within a vertical structure.
           child: Column(
+            // Aligns 'children' or elements to the beginning of the cross axis, or left.
             crossAxisAlignment: CrossAxisAlignment.start,
+            // Automatically adds 16px gap between all 'children' or elements.
+            spacing: 16,
+            // Contains 'children' or elements for the Dashboard.
             children: [
+              // Primary text that writes 'Welcome!'
               const Text(
                 'Welcome!',
                 style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: FlockColors.darkGreen,
-                    letterSpacing: -0.5),
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: FlockColors.textPrimary
+                )
               ),
-              const SizedBox(height: 8),
 
+              // Secondary text that introduces users to FlockSync.
               const Text(
-                'Navigate FlockSync and see building announcements, upcming events, and more!',
+                'Navigate FlockSync and see building announcements, upcoming events, and more!',
                 style: TextStyle(
-                    fontSize: 16,
-                    color: FlockColors.textSecondary,
-                    height: 1.4),
+                  fontSize: 16,
+                  color: FlockColors.textSecondary,
+                )
               ),
-              const SizedBox(height: 12),
 
-              // Other dashboard contentr
+              // Announces new dashboard content
               const AnnouncementCard(
                 title: 'Important Update',
                 message: 'Check out the new features!',
                 icon: Icons.campaign,
               ),
-              const SizedBox(height: 8),
 
+              // Primary text above building announcements.
               const Text(
                 'Building Announcements',
                 style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: FlockColors.darkGreen,
-                    letterSpacing: -0.5),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: FlockColors.textPrimary
+                )
               ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
+
+              // Building Announcements.
+              Container(
+                height: 300,
+                decoration: BoxDecoration(
+                  border: Border.all(color: FlockColors.darkGreen),
+                ),
+
+                // Building Announcements.
+                child: _PlaceholderScreen(label: 'Building Announcements')
+              ),
+
+              // Elements are contained within a horizontal structure.
+              Row(
+                // Aligns 'children' or elements to the beginning of the cross axis, or top.
+                crossAxisAlignment: CrossAxisAlignment.start,
+                // Contains 'children' or elements for the Dashboard.
+                children: [
+                  // --- LEFT COLUMN ---
+                  Expanded(
+                    child: Column(
+                      spacing: 16,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+
+                      children: [
+                        const Text(
+                          'Upcoming Events',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: FlockColors.textPrimary
+                          )
+                        ),
+                        
+                        // Upcoming Events
+                        Container(
+                          height: 666,
+                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
+                          // Upcoming Events
+                          child: _PlaceholderScreen(label: 'Upcoming Events'),
+                        )
+                      ]
+                    )
+                  ),
+                  
+                  // Space between the left and right sides.
+                  const SizedBox(width: 24),
+
+                  // --- RIGHT COLUMN ---
+                  Expanded(
+                    child: Column(
+                      spacing: 16,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Calendar',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: FlockColors.textPrimary
+                          )
+                        ),
+                        
+                        // Calendar Activity
+                        Container(
+                          height: 300,
+                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
+                          // Calendar
+                          child: _PlaceholderScreen(label: 'Calendar')
+                        ),
+                        
+                        const Text(
+                          'Forum Activity',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: FlockColors.textPrimary
+                          )
+                        ),
+                        
+                        // Forum Feed Activity
+                        Container(
+                          height: 300,
+                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
+
+                          // Forum Feed Activity
+                          child: ForumFeedScreen(
+                            buildingId: buildingId,
+                            currentUserId: userId,
+                            currentUserName: userName,
+                            isManagement: isManagement
+                          )
+                        )
+                      ]
+                    )
+                  )
+                ]
+              )
+            ]
+          )
+        )
+      )
     );
   }
 }
@@ -156,12 +267,15 @@ class AnnouncementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      // ... your announcement UI here ...
       child: ListTile(
         leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(message),
-        // ... etc.
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold
+          )
+        ),
+        subtitle: Text(message)
       ),
     );
   }
