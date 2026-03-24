@@ -139,7 +139,7 @@ class _DashboardScreen extends StatelessWidget {
 
               // Primary text above building announcements.
               const Text(
-                'Building Announcements',
+                'Building Forum',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -155,7 +155,12 @@ class _DashboardScreen extends StatelessWidget {
                 ),
 
                 // Building Announcements.
-                child: _PlaceholderScreen(label: 'Building Announcements')
+                child: ForumFeedScreen(
+                  buildingId: buildingId,
+                  currentUserId: userId,
+                  currentUserName: userName,
+                  isManagement: isManagement
+                )
               ),
 
               // Elements are contained within a horizontal structure.
@@ -218,7 +223,7 @@ class _DashboardScreen extends StatelessWidget {
                         ),
                         
                         const Text(
-                          'Forum Activity',
+                          'Building Announcements',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -231,13 +236,8 @@ class _DashboardScreen extends StatelessWidget {
                           height: 300,
                           decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
 
-                          // Forum Feed Activity
-                          child: ForumFeedScreen(
-                            buildingId: buildingId,
-                            currentUserId: userId,
-                            currentUserName: userName,
-                            isManagement: isManagement
-                          )
+                          // Building Announcements
+                          child: _PlaceholderScreen(label: 'Building Announcements')
                         )
                       ]
                     )
