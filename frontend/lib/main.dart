@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'pages/maintenance_page.dart';
+import 'pages/personal_calendar_page.dart';
 import 'color.dart';
 
 void main() async {
@@ -31,7 +31,7 @@ class FlockSyncApp extends StatelessWidget {
         ),
       ),
 
-      home: const MaintenancePage(),
+      home: const PersonalCalendarPage(),
     );
   }
 }
