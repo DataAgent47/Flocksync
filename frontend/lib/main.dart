@@ -1,8 +1,11 @@
 import 'package:flocksync/models/forum_post.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'core/theme/flock_theme.dart';
 import 'firebase_options.dart';
+import 'features/auth/screens/login_screen.dart';
+import 'features/auth/services/auth_service.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
 
 void main() async {
@@ -20,7 +23,38 @@ class FlockSyncApp extends StatelessWidget {
       title: 'FlockSync',
       debugShowCheckedModeBanner: false,
       theme: flockTheme(),
-      home: const MainShell(),
+      home: const _AuthGate(),
+    );
+  }
+}
+
+// Auth gate to make sure user is logged in
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        final user = snapshot.data;
+        if (user == null) {
+          return const LoginScreen();
+        }
+
+        final isEmailPasswordUser = user.providerData.any(
+          (info) => info.providerId == 'password',
+        );
+        if (isEmailPasswordUser && !user.emailVerified) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        return MainShell(user: user);
+      },
     );
   }
 }
@@ -28,7 +62,9 @@ class FlockSyncApp extends StatelessWidget {
 // ─── Main shell with bottom nav ────────────────────────────────────────────────
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  const MainShell({super.key, required this.user});
+
+  final User user;
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -37,9 +73,14 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 2; // start on Forums tab for testing
 
-  // TODO: replace with real auth values once auth feature is merged
-  static const _mockUserId = 'dev_user_001';
-  static const _mockUserName = 'Dev User';
+  String get _userId => widget.user.uid;
+  // TODO: replace with real first name from firestore
+  String get _userName =>
+      (widget.user.displayName?.trim().isNotEmpty ?? false)
+          ? widget.user.displayName!.trim()
+          : (widget.user.email?.split('@').first ?? 'Neighbor');
+
+  // TODO: replace with real property id from onboarding/profile data.
   static const _mockBuildingId = 'building_test_001';
   static const _mockIsManagement = false;
 
@@ -50,19 +91,21 @@ class _MainShellState extends State<MainShell> {
         index: _currentIndex,
         children: [
           _DashboardScreen(
-            userId: _mockUserId,
-            userName: _mockUserName,
+            userId: _userId,
+            userName: _userName,
             buildingId: _mockBuildingId,
             isManagement: _mockIsManagement,
           ),
           const _PlaceholderScreen(label: 'Calendar'),
           _ForumsLandingScreen(
-            userId: _mockUserId,
-            userName: _mockUserName,
+            userId: _userId,
+            userName: _userName,
             buildingId: _mockBuildingId,
             isManagement: _mockIsManagement,
           ),
-          const _PlaceholderScreen(label: 'Settings'),
+          // const _PlaceholderScreen(label: 'Settings'),
+          // TODO: build proper settings screen
+          const _SettingsScreen(),
         ],
       ),
       bottomNavigationBar: _FlockBottomNav(
@@ -468,6 +511,27 @@ class _PlaceholderScreen extends StatelessWidget {
                 style: TextStyle(
                     color: FlockColors.textSecondary, fontSize: 14)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// Temporary screen for signing out
+class _SettingsScreen extends StatelessWidget {
+  const _SettingsScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final authService = AuthService();
+
+    return Scaffold(
+      backgroundColor: FlockColors.cream,
+      body: Center(
+        child: FilledButton.icon(
+          onPressed: () async => authService.signOut(),
+          icon: const Icon(Icons.logout),
+          label: const Text('Sign Out'),
         ),
       ),
     );
