@@ -569,12 +569,13 @@ class _PlaceholderScreen extends StatelessWidget {
     );
   }
 }
-
 // Temporary screen for signing out
 class _SettingsScreen extends StatelessWidget {
   const _SettingsScreen({required this.user});
 
   final User user;
+
+  String get _uid => user.uid;
 
   @override
   Widget build(BuildContext context) {
@@ -583,10 +584,38 @@ class _SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: FlockColors.cream,
       body: Center(
-        child: FilledButton.icon(
-          onPressed: () async => authService.signOut(),
-          icon: const Icon(Icons.logout),
-          label: const Text('Sign Out'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'UID',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: FlockColors.textSecondary,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SelectableText(
+                _uid,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: FlockColors.darkGreen,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () async => authService.signOut(),
+              icon: const Icon(Icons.logout),
+              label: const Text('Sign Out'),
+            ),
+          ],
         ),
       ),
     );
