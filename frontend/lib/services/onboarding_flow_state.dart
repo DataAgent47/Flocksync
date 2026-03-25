@@ -1,3 +1,4 @@
+// Originally used in demo to track onboarding flow state, now used for data persistence b/w steps.
 class OnboardingFlowState {
   const OnboardingFlowState({
     this.step = 1,
@@ -11,73 +12,68 @@ class OnboardingFlowState {
   final bool isManagement;
   final String? errorMessage;
 
-  OnboardingFlowState goTo(int nextStep) {
+  OnboardingFlowState copyWith({
+    int? step,
+    bool? usedInviteCode,
+    bool? isManagement,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
     return OnboardingFlowState(
-      step: nextStep,
-      usedInviteCode: usedInviteCode,
-      isManagement: isManagement,
+      step: step ?? this.step,
+      usedInviteCode: usedInviteCode ?? this.usedInviteCode,
+      isManagement: isManagement ?? this.isManagement,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
+  }
+
+  OnboardingFlowState goTo(int nextStep) {
+    return copyWith(step: nextStep, clearError: true);
   }
 
   OnboardingFlowState startResident() {
-    return const OnboardingFlowState(step: 2, usedInviteCode: false);
+    return copyWith(
+      step: 2,
+      usedInviteCode: false,
+      isManagement: false,
+      clearError: true,
+    );
   }
 
   OnboardingFlowState startManagement() {
-    return const OnboardingFlowState(step: 8, isManagement: true);
+    return copyWith(
+      step: 8,
+      isManagement: true,
+      usedInviteCode: false,
+      clearError: true,
+    );
   }
 
   OnboardingFlowState state3Invite(bool nextUsedInviteCode, int nextStep) {
-    return OnboardingFlowState(
+    return copyWith(
       step: nextStep,
-      usedInviteCode: nextUsedInviteCode,
+      usedInviteCode: usedInviteCode,
       isManagement: false,
-    );
-  }
-
-  OnboardingFlowState state8Address(String address, int nextStep) {
-    if (address.trim().isEmpty) {
-      return OnboardingFlowState(
-        step: step,
-        usedInviteCode: usedInviteCode,
-        isManagement: isManagement,
-        errorMessage: 'Please enter your building address.',
-      );
-    }
-
-    return OnboardingFlowState(
-      step: nextStep,
-      usedInviteCode: usedInviteCode,
-      isManagement: isManagement,
-    );
-  }
-
-  OnboardingFlowState clearError() {
-    if (errorMessage == null) {
-      return this;
-    }
-
-    return OnboardingFlowState(
-      step: step,
-      usedInviteCode: usedInviteCode,
-      isManagement: isManagement,
+      clearError: true,
     );
   }
 
   OnboardingFlowState goBack() {
-    return switch (step) {
-      2 => goTo(1),
-      3 => goTo(2),
-      4 => goTo(isManagement ? 8 : (usedInviteCode ? 3 : 7)),
-      5 => goTo(4),
-      6 => goTo(5),
-      7 => goTo(2),
-      8 => goTo(1),
-      9 => goTo(8),
-      10 => goTo(9),
-      11 => goTo(10),
-      12 => goTo(9),
-      _ => goTo(1),
+    final previousStep = switch (step) {
+      2 => 1,
+      3 => 2,
+      4 => isManagement ? 8 : (usedInviteCode ? 3 : 7),
+      5 => 4,
+      6 => 5,
+      7 => 2,
+      8 => 1,
+      9 => 8,
+      10 => 9,
+      11 => 10,
+      12 => 9,
+      _ => 1,
     };
+
+    return goTo(previousStep);
   }
 }
