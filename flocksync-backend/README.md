@@ -2,6 +2,9 @@
 
 This guide explains how to set up the Flocksync backend for development on a Mac.
 
+> [!NOTE]
+> If you just want to complete onboarding (and use the maps api), just skip the MongoDB steps.
+
 ---
 
 ## MongoDB Setup
@@ -75,4 +78,4 @@ npm run dev
 - `FRONTEND_ORIGIN=http://localhost:3000,http://123.123.123.123:1234`
 - `MAP_USER_AGENT=Flocksync/1.0 (contact: help@hos.sh)`
 
-For local development, the backend also allows `localhost` and `127.0.0.1` on any port so Flutter web can use random dev ports without changing config each run.
+For local development, the backend also allows `localhost` and `127.0.0.1` on any port, as Flutter randomizes its port. 
