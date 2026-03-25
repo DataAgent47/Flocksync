@@ -31,6 +31,26 @@
     flutter run -d chrome
     ```
 
+### Backend API
+
+By default it reads localhost:5000, if you are hosting it, change the API accordingly:
+
+```bash
+flutter run --dart-define BACKEND_API_URL=http://localhost:5000
+```
+
+note for Android emulator: use 10.0.2.2 instead of localhost
+
+### Optional API setup
+
+For OpenStreetMaps
+```bash
+flutter run \
+    --dart-define MAP_TILE_URL_TEMPLATE=https://your-provider/{z}/{x}/{y}.png?key=YOUR_KEY \
+    --dart-define MAP_TILE_ATTRIBUTION="Provider; OpenStreetMap" \
+    --dart-define MAP_TILE_USER_AGENT_PACKAGE=com.flocksync.frontend
+```
+
 ### Firebase setup 
 
 If you have the config files, which are named `firebase_options.dart`, then just drop it to `frontend/lib`.
