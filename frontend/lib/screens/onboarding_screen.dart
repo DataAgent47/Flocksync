@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../app_colors.dart';
 import '../services/maps_service.dart';
+import '../services/onboarding_firestore_service.dart';
 import '../services/onboarding_flow_state.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -18,6 +21,8 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   OnboardingFlowState _flow = const OnboardingFlowState();
+  final OnboardingFirestoreService _onboardingStore =
+      OnboardingFirestoreService();
 
   final _inviteCodeController = TextEditingController();
   final _buildingAddressController = TextEditingController();
@@ -29,10 +34,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final _inviteCodeFormKey = GlobalKey<FormState>();
   final _addressFormKey = GlobalKey<FormState>();
+  final _residentDetailsFormKey = GlobalKey<FormState>();
+  final _managementDetailsFormKey = GlobalKey<FormState>();
   late final AddressLookupController _addressLookup;
 
   String? _selectedManagementRole;
   bool _managementRoleVerified = false;
+  String? _activePropertyId;
+  String? _activeInviteCode;
+  bool _isSyncingStep = false;
+  bool _isSubmittingInviteCode = false;
 
   @override
   void initState() {
@@ -40,6 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _addressLookup = AddressLookupController()
       ..addListener(_handleAddressLookupChanged);
     _prefillName(widget.user);
+    Future<void>.microtask(_hydrateFromDB);
   }
 
   void _handleAddressLookupChanged() {
@@ -83,7 +95,228 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _updateFlow(OnboardingFlowState nextFlow) {
-    setState(() => _flow = nextFlow);
+    final previousFlow = _flow;
+    setState(() {
+      _flow = OnboardingFlowState(
+        step: nextFlow.step,
+        usedInviteCode: nextFlow.usedInviteCode,
+        isManagement: nextFlow.isManagement,
+      );
+    });
+    _syncTransition(previousFlow, nextFlow);
+  }
+
+  Future<void> _syncTransition(
+    OnboardingFlowState previousFlow,
+    OnboardingFlowState nextFlow,
+  ) async {
+    if (_isSyncingStep) {
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _isSyncingStep = true);
+    } else {
+      _isSyncingStep = true;
+    }
+    try {
+      _clearFlowError();
+      await _saveStepData(
+        previousFlow: previousFlow,
+        nextFlow: nextFlow,
+      ).timeout(const Duration(seconds: 12));
+      await _hydrateFromDB().timeout(const Duration(seconds: 12));
+    } on TimeoutException {
+      _setFlowError(
+        'Request timed out. Please check your connection and try again.',
+      );
+    } catch (error) {
+      _setFlowError(_friendlyError(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncingStep = false);
+      } else {
+        _isSyncingStep = false;
+      }
+    }
+  }
+
+  Future<void> _hydrateFromDB() async {
+    final uid = widget.user?.uid;
+    if (uid == null) {
+      return;
+    }
+
+    try {
+      final hydrated = await _onboardingStore.hydrate(
+        uid: uid,
+        preferredPropertyId: _activePropertyId,
+      );
+      if (!mounted) {
+        return;
+      }
+
+      final data = hydrated.userData;
+      if (data != null) {
+        _setController(_firstNameController, data['first_name']);
+        _setController(_lastNameController, data['last_name']);
+        _setController(_phoneController, data['phone']);
+        _setController(_contactEmailController, data['contact_email']);
+        _setController(_aptController, data['apt_number']);
+
+        final role = data['role'] as String?;
+        if (role == 'manager' && !_flow.isManagement) {
+          setState(() {
+            _flow = OnboardingFlowState(
+              step: _flow.step,
+              usedInviteCode: _flow.usedInviteCode,
+              isManagement: true,
+              errorMessage: _flow.errorMessage,
+            );
+          });
+        }
+
+        final onboardingState = data['onboarding_state'];
+        if (onboardingState is Map<String, dynamic>) {
+          final propertyId = onboardingState['property_id'] as String?;
+          if (propertyId != null && propertyId.isNotEmpty) {
+            _activePropertyId = propertyId;
+          }
+
+          final remoteStepKey = onboardingState['step'] as String?;
+          final remoteStep = _onboardingStore.stepFromKey(remoteStepKey);
+          if (remoteStep != null && remoteStep != _flow.step) {
+            setState(() {
+              _flow = OnboardingFlowState(
+                step: remoteStep,
+                usedInviteCode: _flow.usedInviteCode,
+                isManagement: _flow.isManagement,
+                errorMessage: _flow.errorMessage,
+              );
+            });
+          }
+        }
+      }
+
+      final property = hydrated.property;
+      if (property != null) {
+        _applyPropertyData(property.propertyId, property.data);
+      }
+    } catch (error) {
+      _setFlowError(_friendlyError(error));
+    }
+  }
+
+  Future<void> _saveStepData({
+    required OnboardingFlowState previousFlow,
+    required OnboardingFlowState nextFlow,
+  }) async {
+    final uid = widget.user?.uid;
+    if (uid == null) {
+      throw Exception('You must be signed in to continue onboarding.');
+    }
+
+    final completed = nextFlow.step == 6 || nextFlow.step == 11;
+    final persist = await _onboardingStore.saveStepData(
+      uid: uid,
+      previousStep: previousFlow.step,
+      nextStep: nextFlow.step,
+      isManagement: nextFlow.isManagement,
+      firstName: _firstNameController.text,
+      lastName: _lastNameController.text,
+      contactEmail: _contactEmailController.text,
+      fallbackAuthEmail: widget.user?.email ?? '',
+      phone: _phoneController.text,
+      aptNumber: _aptController.text,
+      selectedManagementRole: _selectedManagementRole,
+      propertyId: _activePropertyId,
+      displayAddress: _buildingAddressController.text,
+      latitude: _addressLookup.verifiedAddress?.latitude,
+      longitude: _addressLookup.verifiedAddress?.longitude,
+      verifiedAddressLine: _addressLookup.verifiedAddress?.addressLine,
+      verifiedCity: _addressLookup.verifiedAddress?.city,
+      verifiedRegion: _addressLookup.verifiedAddress?.region,
+      verifiedPostalCode: _addressLookup.verifiedAddress?.postalCode,
+      verifiedCountryCode: _addressLookup.verifiedAddress?.countryCode,
+      completed: completed,
+    );
+
+    if (persist.propertyId != null && persist.propertyId!.isNotEmpty) {
+      _activePropertyId = persist.propertyId;
+    }
+
+    if (persist.inviteCode != null && persist.inviteCode!.isNotEmpty) {
+      _activeInviteCode = persist.inviteCode;
+      _inviteCodeController.text = persist.inviteCode!;
+    }
+  }
+
+  void _applyPropertyData(String propertyId, Map<String, dynamic> data) {
+    _activePropertyId = propertyId;
+    final display = (data['address_display_name'] as String?)?.trim() ?? '';
+    if (display.isNotEmpty) {
+      _buildingAddressController.text = display;
+    }
+
+    final inviteCode = (data['invite_code'] as String?)?.trim() ?? '';
+    if (inviteCode.isNotEmpty) {
+      _activeInviteCode = inviteCode;
+      _inviteCodeController.text = inviteCode;
+    }
+
+    final lat = (data['latitude'] as num?)?.toDouble();
+    final lon = (data['longitude'] as num?)?.toDouble();
+    if (display.isNotEmpty && lat != null && lon != null) {
+      _addressLookup.selectSuggestion(
+        AddressSuggestion(displayName: display, latitude: lat, longitude: lon),
+      );
+    }
+  }
+
+  void _setController(
+    TextEditingController controller,
+    dynamic value,
+  ) {
+    if (value is String && value.trim().isNotEmpty) {
+      controller.text = value.trim();
+    }
+  }
+
+  String _friendlyError(Object error) {
+    if (error is FirebaseException) {
+      return error.message ?? 'A Firebase error occurred. Please try again.';
+    }
+
+    return error.toString().replaceFirst('Exception: ', '');
+  }
+
+  void _setFlowError(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _flow = OnboardingFlowState(
+        step: _flow.step,
+        usedInviteCode: _flow.usedInviteCode,
+        isManagement: _flow.isManagement,
+        errorMessage: message,
+      );
+    });
+  }
+
+  void _clearFlowError() {
+    if (!mounted || _flow.errorMessage == null) {
+      return;
+    }
+
+    setState(() {
+      _flow = OnboardingFlowState(
+        step: _flow.step,
+        usedInviteCode: _flow.usedInviteCode,
+        isManagement: _flow.isManagement,
+      );
+    });
   }
 
   // Helper functions for address state transitions
@@ -96,7 +329,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final verified = await _addressLookup.verifyAddressInput(
       _buildingAddressController.text,
     );
-    if (!mounted || verified == null) {
+    if (!mounted) {
+      return;
+    }
+
+    if (verified == null) {
+      if (_addressLookup.lookupError != null) {
+        _setFlowError(_addressLookup.lookupError!);
+      }
       return;
     }
 
@@ -147,13 +387,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  void _submitInviteCode({required int nextStep}) {
+  Future<void> _submitInviteCode({required int nextStep}) async {
     final isValid = _inviteCodeFormKey.currentState?.validate() ?? false;
     if (!isValid) {
       return;
     }
 
-    _updateFlow(_flow.goTo(nextStep));
+    final inviteCode = _inviteCodeController.text.trim().toUpperCase();
+    _inviteCodeController.text = inviteCode;
+
+    setState(() => _isSubmittingInviteCode = true);
+    try {
+      final property = await _onboardingStore
+          .findPropertyByInviteCode(inviteCode)
+          .timeout(const Duration(seconds: 10));
+
+      if (property == null) {
+        _setFlowError('Invite code not found. Please check and try again.');
+        return;
+      }
+
+      _applyPropertyData(property.propertyId, property.data);
+      _updateFlow(_flow.goTo(nextStep));
+    } on TimeoutException {
+      _setFlowError('Invite code check timed out. Please try again.');
+    } catch (error) {
+      _setFlowError(_friendlyError(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmittingInviteCode = false);
+      } else {
+        _isSubmittingInviteCode = false;
+      }
+    }
   }
 
   void _goBack() {
@@ -398,14 +664,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _submitInviteCode(nextStep: 4),
+                onPressed: (_isSyncingStep || _isSubmittingInviteCode)
+                    ? null
+                    : () => _submitInviteCode(nextStep: 4),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     vertical: 14,
                     horizontal: 16,
                   ),
                 ),
-                child: const Text('Enter'),
+                child: (_isSyncingStep || _isSubmittingInviteCode)
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Enter'),
               ),
             ),
           ],
@@ -562,50 +836,71 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           icon: Icons.person_outline,
           title: "Let's get some details filled in",
         ),
-        TextField(
-          controller: _firstNameController,
-          decoration: const InputDecoration(
-            labelText: 'First Name',
-            prefixIcon: Icon(Icons.person_outline),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _lastNameController,
-          decoration: const InputDecoration(
-            labelText: 'Last Name',
-            prefixIcon: Icon(Icons.person_outline),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'Phone Number',
-            prefixIcon: Icon(Icons.phone_outlined),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _contactEmailController,
-          keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
-            labelText: 'Contact Email',
-            prefixIcon: Icon(Icons.email_outlined),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _aptController,
-          decoration: const InputDecoration(
-            labelText: 'Apartment Number',
-            prefixIcon: Icon(Icons.door_front_door_outlined),
-            border: OutlineInputBorder(),
+        Form(
+          key: _residentDetailsFormKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _firstNameController,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'First Name is required';
+                  }
+                  return null;
+                },
+                decoration: const InputDecoration(
+                  labelText: 'First Name',
+                  prefixIcon: Icon(Icons.person_outline),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _lastNameController,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Last Name is required';
+                  }
+                  return null;
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Last Name',
+                  prefixIcon: Icon(Icons.person_outline),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _contactEmailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Contact Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _aptController,
+                decoration: const InputDecoration(
+                  labelText: 'Apartment Number',
+                  prefixIcon: Icon(Icons.door_front_door_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),
@@ -623,7 +918,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: () => _updateFlow(_flow.goTo(6)),
+                onPressed: () {
+                  final isValid =
+                      _residentDetailsFormKey.currentState?.validate() ?? false;
+                  if (!isValid) {
+                    return;
+                  }
+
+                  _updateFlow(_flow.goTo(6));
+                },
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -804,63 +1107,84 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           icon: Icons.person_outline,
           title: "Let's get some details filled in",
         ),
-        TextField(
-          controller: _firstNameController,
-          decoration: const InputDecoration(
-            labelText: 'First Name',
-            prefixIcon: Icon(Icons.person_outline),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _lastNameController,
-          decoration: const InputDecoration(
-            labelText: 'Last Name',
-            prefixIcon: Icon(Icons.person_outline),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedManagementRole,
-          decoration: const InputDecoration(
-            labelText: 'Select your role',
-            prefixIcon: Icon(Icons.badge_outlined),
-            border: OutlineInputBorder(),
-          ),
-          items: roles
-              .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-              .toList(),
-          onChanged: (v) => setState(() => _selectedManagementRole = v),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'Phone Number',
-            prefixIcon: Icon(Icons.phone_outlined),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _contactEmailController,
-          keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
-            labelText: 'Contact Email',
-            prefixIcon: Icon(Icons.email_outlined),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _aptController,
-          decoration: const InputDecoration(
-            labelText: 'Apartment Number',
-            prefixIcon: Icon(Icons.door_front_door_outlined),
-            border: OutlineInputBorder(),
+        Form(
+          key: _managementDetailsFormKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _firstNameController,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'First Name is required';
+                  }
+                  return null;
+                },
+                decoration: const InputDecoration(
+                  labelText: 'First Name',
+                  prefixIcon: Icon(Icons.person_outline),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _lastNameController,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Last Name is required';
+                  }
+                  return null;
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Last Name',
+                  prefixIcon: Icon(Icons.person_outline),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedManagementRole,
+                decoration: const InputDecoration(
+                  labelText: 'Select your role',
+                  prefixIcon: Icon(Icons.badge_outlined),
+                  border: OutlineInputBorder(),
+                ),
+                items: roles
+                    .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedManagementRole = v),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _contactEmailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Contact Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _aptController,
+                decoration: const InputDecoration(
+                  labelText: 'Apartment Number',
+                  prefixIcon: Icon(Icons.door_front_door_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),
@@ -879,6 +1203,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: FilledButton(
                 onPressed: () {
+                  final isValid =
+                      _managementDetailsFormKey.currentState?.validate() ??
+                      false;
+                  if (!isValid) {
+                    return;
+                  }
+
                   final needsVerification =
                       _selectedManagementRole == 'Building Owner' ||
                       _selectedManagementRole == 'Superintendant';
@@ -920,7 +1251,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'FLK-ABC123',
+                  _activeInviteCode ?? '--- ---',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     letterSpacing: 2,
@@ -932,7 +1263,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   icon: const Icon(Icons.content_copy),
                   onPressed: () async {
                     await Clipboard.setData(
-                      const ClipboardData(text: 'FLK-ABC123'),
+                      ClipboardData(text: _activeInviteCode ?? '--- ---'),
                     );
                   },
                 ),
