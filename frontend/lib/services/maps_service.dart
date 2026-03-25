@@ -53,11 +53,21 @@ class VerifiedAddress {
   final String formattedAddress;
   final double latitude;
   final double longitude;
+  final String? addressLine;
+  final String? city;
+  final String? region;
+  final String? postalCode;
+  final String? countryCode;
 
   const VerifiedAddress({
     required this.formattedAddress,
     required this.latitude,
     required this.longitude,
+    this.addressLine,
+    this.city,
+    this.region,
+    this.postalCode,
+    this.countryCode,
   });
 }
 
@@ -157,6 +167,11 @@ class MapsService {
           double.tryParse(verifiedAddress['latitude']?.toString() ?? '') ?? 0,
       longitude:
           double.tryParse(verifiedAddress['longitude']?.toString() ?? '') ?? 0,
+      addressLine: (verifiedAddress['addressLine'] as String?)?.trim(),
+      city: (verifiedAddress['city'] as String?)?.trim(),
+      region: (verifiedAddress['region'] as String?)?.trim(),
+      postalCode: (verifiedAddress['postalCode'] as String?)?.trim(),
+      countryCode: (verifiedAddress['countryCode'] as String?)?.trim(),
     );
   }
 
