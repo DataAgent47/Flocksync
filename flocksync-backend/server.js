@@ -69,6 +69,16 @@ const parseAddressResult = (result) => {
    const displayName = result?.display_name?.trim()
    const latitude = Number.parseFloat(result?.lat)
    const longitude = Number.parseFloat(result?.lon)
+   const address = result?.address || {}
+
+   const addressLine = [address.house_number, address.road]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
+   const city = address.city || address.town || address.village || address.hamlet || address.municipality || ''
+   const region = address.state || address.region || address.county || ''
+   const postalCode = address.postcode || ''
+   const countryCode = (address.country_code || '').toUpperCase()
 
    if (!displayName || Number.isNaN(latitude) || Number.isNaN(longitude)) {
       return null
@@ -78,6 +88,11 @@ const parseAddressResult = (result) => {
       displayName,
       latitude,
       longitude,
+      addressLine,
+      city,
+      region,
+      postalCode,
+      countryCode,
    }
 }
 const searchAddresses = async ({ query, limit = DEFAULT_MAP_RESULT_LIMIT }) => {
@@ -172,6 +187,11 @@ app.get('/api/maps/verify', async (req, res) => {
             formattedAddress: bestMatch.displayName,
             latitude: bestMatch.latitude,
             longitude: bestMatch.longitude,
+            addressLine: bestMatch.addressLine,
+            city: bestMatch.city,
+            region: bestMatch.region,
+            postalCode: bestMatch.postalCode,
+            countryCode: bestMatch.countryCode,
          },
       })
    } catch (error) {
