@@ -1,4 +1,4 @@
-import 'package:flocksync/models/forum_post.dart';
+// import 'package:flocksync/models/forum_post.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +7,8 @@ import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
+import 'features/onboarding/screens/onboarding_screen.dart';
+import 'features/onboarding/services/onboarding_firestore_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +40,9 @@ class _AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         final user = snapshot.data;
@@ -50,7 +54,9 @@ class _AuthGate extends StatelessWidget {
           (info) => info.providerId == 'password',
         );
         if (isEmailPasswordUser && !user.emailVerified) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         return MainShell(user: user);
@@ -75,10 +81,9 @@ class _MainShellState extends State<MainShell> {
 
   String get _userId => widget.user.uid;
   // TODO: replace with real first name from firestore
-  String get _userName =>
-      (widget.user.displayName?.trim().isNotEmpty ?? false)
-          ? widget.user.displayName!.trim()
-          : (widget.user.email?.split('@').first ?? 'Neighbor');
+  String get _userName => (widget.user.displayName?.trim().isNotEmpty ?? false)
+      ? widget.user.displayName!.trim()
+      : (widget.user.email?.split('@').first ?? 'Neighbor');
 
   // TODO: replace with real property id from onboarding/profile data.
   static const _mockBuildingId = 'building_test_001';
@@ -95,6 +100,7 @@ class _MainShellState extends State<MainShell> {
             userName: _userName,
             buildingId: _mockBuildingId,
             isManagement: _mockIsManagement,
+            user: widget.user,
           ),
           const _PlaceholderScreen(label: 'Calendar'),
           _ForumsLandingScreen(
@@ -105,7 +111,7 @@ class _MainShellState extends State<MainShell> {
           ),
           // const _PlaceholderScreen(label: 'Settings'),
           // TODO: build proper settings screen
-          const _SettingsScreen(),
+          _SettingsScreen(user: widget.user),
         ],
       ),
       bottomNavigationBar: _FlockBottomNav(
@@ -123,12 +129,14 @@ class _DashboardScreen extends StatelessWidget {
   final String userName;
   final String buildingId;
   final bool isManagement;
+  final User user;
 
   const _DashboardScreen({
     required this.userId,
     required this.userName,
     required this.buildingId,
     required this.isManagement,
+    required this.user,
   });
 
   /**
@@ -160,8 +168,8 @@ class _DashboardScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: FlockColors.textPrimary
-                )
+                  color: FlockColors.textPrimary,
+                ),
               ),
 
               // Secondary text that introduces users to FlockSync.
@@ -170,7 +178,7 @@ class _DashboardScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   color: FlockColors.textSecondary,
-                )
+                ),
               ),
 
               // Announces new dashboard content
@@ -180,14 +188,46 @@ class _DashboardScreen extends StatelessWidget {
                 icon: Icons.campaign,
               ),
 
+              // Temporary Onboarding card
+              StreamBuilder<bool>(
+                stream: OnboardingFirestoreService()
+                    .isOnboardingCompleted(user.uid),
+                builder: (context, snapshot) {
+                  final isCompleted = snapshot.data ?? false;
+                  if (isCompleted) {
+                    return const SizedBox.shrink();
+                  }
+                  return GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => OnboardingScreen(user: user),
+                      ),
+                    ),
+                    child: Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.rocket_launch_outlined),
+                        title: const Text(
+                          'Complete Your Profile',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: const Text(
+                          'Onboarding is required to gain access to site features!',
+                        ),
+                        trailing: const Icon(Icons.arrow_forward),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
               // Primary text above building announcements.
               const Text(
                 'Building Forum',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: FlockColors.textPrimary
-                )
+                  color: FlockColors.textPrimary,
+                ),
               ),
 
               // Building Announcements.
@@ -202,8 +242,8 @@ class _DashboardScreen extends StatelessWidget {
                   buildingId: buildingId,
                   currentUserId: userId,
                   currentUserName: userName,
-                  isManagement: isManagement
-                )
+                  isManagement: isManagement,
+                ),
               ),
 
               // Elements are contained within a horizontal structure.
@@ -224,21 +264,23 @@ class _DashboardScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: FlockColors.textPrimary
-                          )
+                            color: FlockColors.textPrimary,
+                          ),
                         ),
-                        
+
                         // Upcoming Events
                         Container(
                           height: 666,
-                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: FlockColors.textPrimary),
+                          ),
                           // Upcoming Events
                           child: _PlaceholderScreen(label: 'Upcoming Events'),
-                        )
-                      ]
-                    )
+                        ),
+                      ],
+                    ),
                   ),
-                  
+
                   // Space between the left and right sides.
                   const SizedBox(width: 24),
 
@@ -253,44 +295,50 @@ class _DashboardScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: FlockColors.textPrimary
-                          )
+                            color: FlockColors.textPrimary,
+                          ),
                         ),
-                        
+
                         // Calendar Activity
                         Container(
                           height: 300,
-                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: FlockColors.textPrimary),
+                          ),
                           // Calendar
-                          child: _PlaceholderScreen(label: 'Calendar')
+                          child: _PlaceholderScreen(label: 'Calendar'),
                         ),
-                        
+
                         const Text(
                           'Building Announcements',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: FlockColors.textPrimary
-                          )
+                            color: FlockColors.textPrimary,
+                          ),
                         ),
-                        
+
                         // Forum Feed Activity
                         Container(
                           height: 300,
-                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: FlockColors.textPrimary),
+                          ),
 
                           // Building Announcements
-                          child: _PlaceholderScreen(label: 'Building Announcements')
-                        )
-                      ]
-                    )
-                  )
-                ]
-              )
-            ]
-          )
-        )
-      )
+                          child: _PlaceholderScreen(
+                            label: 'Building Announcements',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -312,13 +360,8 @@ class AnnouncementCard extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: Icon(icon),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold
-          )
-        ),
-        subtitle: Text(message)
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(message),
       ),
     );
   }
@@ -352,18 +395,20 @@ class _ForumsLandingScreen extends StatelessWidget {
               const Text(
                 'Forums',
                 style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: FlockColors.darkGreen,
-                    letterSpacing: -0.5),
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: FlockColors.darkGreen,
+                  letterSpacing: -0.5,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Share information and connect with your neighbors!',
                 style: TextStyle(
-                    fontSize: 16,
-                    color: FlockColors.textSecondary,
-                    height: 1.4),
+                  fontSize: 16,
+                  color: FlockColors.textSecondary,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 48),
 
@@ -386,10 +431,7 @@ class _ForumsLandingScreen extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Zip code forum — coming soon
-              const _ForumTile(
-                label: 'From your zip code',
-                onTap: null,
-              ),
+              const _ForumTile(label: 'From your zip code', onTap: null),
             ],
           ),
         ),
@@ -424,12 +466,16 @@ class _ForumTile extends StatelessWidget {
               Text(
                 label,
                 style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: FlockColors.darkGreen),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: FlockColors.darkGreen,
+                ),
               ),
-              const Icon(Icons.arrow_forward,
-                  color: FlockColors.darkGreen, size: 20),
+              const Icon(
+                Icons.arrow_forward,
+                color: FlockColors.darkGreen,
+                size: 20,
+              ),
             ],
           ),
         ),
@@ -498,18 +544,25 @@ class _PlaceholderScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.construction_outlined,
-                size: 48, color: FlockColors.tan),
+            const Icon(
+              Icons.construction_outlined,
+              size: 48,
+              color: FlockColors.tan,
+            ),
             const SizedBox(height: 16),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: FlockColors.darkGreen)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: FlockColors.darkGreen,
+              ),
+            ),
             const SizedBox(height: 8),
-            const Text('Coming soon',
-                style: TextStyle(
-                    color: FlockColors.textSecondary, fontSize: 14)),
+            const Text(
+              'Coming soon',
+              style: TextStyle(color: FlockColors.textSecondary, fontSize: 14),
+            ),
           ],
         ),
       ),
@@ -519,7 +572,9 @@ class _PlaceholderScreen extends StatelessWidget {
 
 // Temporary screen for signing out
 class _SettingsScreen extends StatelessWidget {
-  const _SettingsScreen();
+  const _SettingsScreen({required this.user});
+
+  final User user;
 
   @override
   Widget build(BuildContext context) {
