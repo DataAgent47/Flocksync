@@ -41,6 +41,11 @@ dependencies:
 
   # State management
   provider: ^6.1.0
+  
+  # Maps
+  http: ^1.5.0
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
 
   # Image picking
   image_picker: ^1.0.0
