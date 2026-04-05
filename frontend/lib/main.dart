@@ -59,7 +59,22 @@ class _AuthGate extends StatelessWidget {
           );
         }
 
-        return MainShell(user: user);
+        // Force onboarding completion
+        return StreamBuilder<bool>(
+          stream: OnboardingFirestoreService().isOnboardingCompleted(user.uid),
+          builder: (context, onboardingSnapshot) {
+            if (onboardingSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final completed = onboardingSnapshot.data ?? false;
+            if (!completed) {
+              return OnboardingScreen(user: user);
+            }
+            return MainShell(user: user);
+          },
+        );
       },
     );
   }
@@ -139,13 +154,11 @@ class _DashboardScreen extends StatelessWidget {
     required this.user,
   });
 
-  /**
-   * Contains the containers and elements of the Dashboard:
-   *  - Building Announcements
-   *  - Upcoming Events
-   *  - Calendar
-   *  - Forum Activity
-   */
+  /// Contains the containers and elements of the Dashboard:
+  ///  - Building Announcements
+  ///  - Upcoming Events
+  ///  - Calendar
+  ///  - Forum Activity
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -186,38 +199,6 @@ class _DashboardScreen extends StatelessWidget {
                 title: 'Important Update',
                 message: 'Check out the new features!',
                 icon: Icons.campaign,
-              ),
-
-              // Temporary Onboarding card
-              StreamBuilder<bool>(
-                stream: OnboardingFirestoreService()
-                    .isOnboardingCompleted(user.uid),
-                builder: (context, snapshot) {
-                  final isCompleted = snapshot.data ?? false;
-                  if (isCompleted) {
-                    return const SizedBox.shrink();
-                  }
-                  return GestureDetector(
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => OnboardingScreen(user: user),
-                      ),
-                    ),
-                    child: Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.rocket_launch_outlined),
-                        title: const Text(
-                          'Complete Your Profile',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: const Text(
-                          'Onboarding is required to gain access to site features!',
-                        ),
-                        trailing: const Icon(Icons.arrow_forward),
-                      ),
-                    ),
-                  );
-                },
               ),
 
               // Primary text above building announcements.
