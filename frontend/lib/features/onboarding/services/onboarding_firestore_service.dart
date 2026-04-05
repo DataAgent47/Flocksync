@@ -314,6 +314,8 @@ class OnboardingFirestoreService {
     final payload = <String, dynamic>{
       'resident_id': uid,
       'property_id': propertyId,
+      'is_verified': false,
+      'verified_at': null,
       'updated_at': FieldValue.serverTimestamp(),
     };
 
