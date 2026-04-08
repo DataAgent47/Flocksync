@@ -339,6 +339,8 @@ class OnboardingFirestoreService {
       'manager_id': uid,
       'property_id': propertyId,
       'manager_role': managementRole,
+      'is_verified': false,
+      'verified_at': null,
       'updated_at': FieldValue.serverTimestamp(),
     };
 

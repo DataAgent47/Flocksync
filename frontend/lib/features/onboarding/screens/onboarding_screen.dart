@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+
 import '../../../core/theme/flock_theme.dart';
 import '../services/maps_service.dart';
 import '../services/onboarding_firestore_service.dart';
@@ -32,6 +34,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _phoneController = TextEditingController();
   final _contactEmailController = TextEditingController();
   final _aptController = TextEditingController();
+
+  PhoneNumber _phoneNumber = PhoneNumber(isoCode: 'US');
+  Key _phoneInputKey = const ValueKey('phone_initial');
 
   final _inviteCodeFormKey = GlobalKey<FormState>();
   final _addressFormKey = GlobalKey<FormState>();
@@ -161,7 +166,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (data != null) {
         _setController(_firstNameController, data['first_name']);
         _setController(_lastNameController, data['last_name']);
-        _setController(_phoneController, data['phone']);
+        final storedPhone = data['phone'] as String?;
+        if (storedPhone != null && storedPhone.isNotEmpty) {
+          if (storedPhone.startsWith('+')) {
+            try {
+              final parsed = await PhoneNumber.getRegionInfoFromPhoneNumber(storedPhone);
+              setState(() {
+                _phoneNumber = parsed;
+                _phoneInputKey = ValueKey(storedPhone);
+              });
+            } catch (_) {
+              _setController(_phoneController, storedPhone);
+            }
+          } else {
+            _setController(_phoneController, storedPhone);
+          }
+        }
         _setController(_contactEmailController, data['contact_email']);
         _setController(_aptController, data['apt_number']);
 
@@ -227,7 +247,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       lastName: _lastNameController.text,
       contactEmail: _contactEmailController.text,
       fallbackAuthEmail: widget.user?.email ?? '',
-      phone: _phoneController.text,
+      phone: _phoneNumber.phoneNumber ?? _phoneController.text,
       aptNumber: _aptController.text,
       selectedManagementRole: _selectedManagementRole,
       propertyId: _activePropertyId,
@@ -870,14 +890,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  border: OutlineInputBorder(),
+              InternationalPhoneNumberInput(
+                key: _phoneInputKey,
+                onInputChanged: (PhoneNumber number) {
+                  _phoneNumber = number;
+                },
+                initialValue: _phoneNumber,
+                textFieldController: _phoneController,
+                countries: ['US', 'CA', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
+                selectorConfig: const SelectorConfig(
+                  useEmoji: true,
+                  showFlags: true,
+                  setSelectorButtonAsPrefixIcon: true,
+                  trailingSpace: false
                 ),
+                inputDecoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                    borderSide: BorderSide(color: FlockColors.darkGreen, width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide(color: FlockColors.darkGreen, width: 1.5),
+                  ),
+                ),
+                keyboardType: TextInputType.phone,
+                formatInput: true,
               ),
               const SizedBox(height: 16),
               TextField(
@@ -1154,14 +1193,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onChanged: (v) => setState(() => _selectedManagementRole = v),
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  border: OutlineInputBorder(),
+              InternationalPhoneNumberInput(
+                key: _phoneInputKey,
+                onInputChanged: (PhoneNumber number) {
+                  _phoneNumber = number;
+                },
+                initialValue: _phoneNumber,
+                textFieldController: _phoneController,
+                countries: ['US', 'CA', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
+                selectorConfig: const SelectorConfig(
+                  useEmoji: true,
+                  showFlags: true,
+                  setSelectorButtonAsPrefixIcon: true,
+                  trailingSpace: false,
                 ),
+                inputDecoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                    borderSide: BorderSide(color: FlockColors.darkGreen, width: 1.5),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide(color: FlockColors.darkGreen, width: 1.5),
+                  ),
+                ),
+                keyboardType: TextInputType.phone,
+                formatInput: true,
               ),
               const SizedBox(height: 16),
               TextField(
