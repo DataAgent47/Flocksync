@@ -76,6 +76,14 @@ ThemeData flockTheme() {
       filled: true,
       fillColor: FlockColors.cardBackground,
       labelStyle: const TextStyle(color: FlockColors.midGreen),
+      prefixIconColor: WidgetStateColor.resolveWith((states) {
+        if (states.contains(WidgetState.error)) return FlockColors.errorRed;
+        return FlockColors.darkGreen;
+      }),
+      suffixIconColor: WidgetStateColor.resolveWith((states) {
+        if (states.contains(WidgetState.error)) return FlockColors.errorRed;
+        return FlockColors.darkGreen;
+      }),
       hintStyle: TextStyle(
         color: FlockColors.textMuted,
         fontStyle: FontStyle.italic,
@@ -91,6 +99,14 @@ ThemeData flockTheme() {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: FlockColors.darkGreen, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: FlockColors.errorRed, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: FlockColors.errorRed, width: 1.5),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
