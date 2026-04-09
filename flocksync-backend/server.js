@@ -75,7 +75,7 @@ const parseAddressResult = (result) => {
       .filter(Boolean)
       .join(' ')
       .trim()
-   const city = address.city || address.town || address.village || address.hamlet || address.municipality || ''
+   const city = address.neighbourhood || address.suburb || address.city_district || address.city || address.town || address.village || address.hamlet || address.municipality || ''
    const region = address.state || address.region || address.county || ''
    const postalCode = address.postcode || ''
    const countryCode = (address.country_code || '').toUpperCase()
