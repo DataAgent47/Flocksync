@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/theme/flock_theme.dart';
 import '../services/maps_service.dart';
@@ -228,6 +229,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  // Mark onboarding as complete at final state
+  Future<void> _finalizeOnboarding() async {
+    final uid = widget.user?.uid;
+    if (uid == null) return;
+    await _onboardingStore.finalizeOnboarding(uid: uid);
+  }
+
   Future<void> _saveStepData({
     required OnboardingFlowState previousFlow,
     required OnboardingFlowState nextFlow,
@@ -237,12 +245,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       throw Exception('You must be signed in to continue onboarding.');
     }
 
-    final completed = nextFlow.step == 6 || nextFlow.step == 11;
     final persist = await _onboardingStore.saveStepData(
       uid: uid,
       previousStep: previousFlow.step,
       nextStep: nextFlow.step,
       isManagement: nextFlow.isManagement,
+      usedInviteCode: nextFlow.usedInviteCode,
       firstName: _firstNameController.text,
       lastName: _lastNameController.text,
       contactEmail: _contactEmailController.text,
@@ -259,7 +267,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       verifiedRegion: _addressLookup.verifiedAddress?.region,
       verifiedPostalCode: _addressLookup.verifiedAddress?.postalCode,
       verifiedCountryCode: _addressLookup.verifiedAddress?.countryCode,
-      completed: completed,
     );
 
     if (persist.propertyId != null && persist.propertyId!.isNotEmpty) {
@@ -899,8 +906,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 textFieldController: _phoneController,
                 countries: ['US', 'CA', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
                 selectorConfig: const SelectorConfig(
+                  selectorType: PhoneInputSelectorType.DIALOG,
                   useEmoji: true,
                   showFlags: true,
+                  leadingPadding: 12,
                   setSelectorButtonAsPrefixIcon: true,
                   trailingSpace: false
                 ),
@@ -917,6 +926,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 keyboardType: TextInputType.phone,
                 formatInput: true,
+                validator: (value) => null,
               ),
               const SizedBox(height: 16),
               TextField(
@@ -995,7 +1005,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             Expanded(
               child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: _finalizeOnboarding,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -1202,8 +1212,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 textFieldController: _phoneController,
                 countries: ['US', 'CA', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
                 selectorConfig: const SelectorConfig(
+                  selectorType: PhoneInputSelectorType.DIALOG,
                   useEmoji: true,
                   showFlags: true,
+                  leadingPadding: 12,
                   setSelectorButtonAsPrefixIcon: true,
                   trailingSpace: false,
                 ),
@@ -1220,6 +1232,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 keyboardType: TextInputType.phone,
                 formatInput: true,
+                validator: (value) => null,
               ),
               const SizedBox(height: 16),
               TextField(
@@ -1294,7 +1307,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           title: 'Invite residents',
           subtitle: 'Share this code with your residents',
         ),
-        // Mock invite code
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           decoration: BoxDecoration(
@@ -1328,19 +1340,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        // Mock QR
         Center(
           child: Container(
-            width: 160,
-            height: 160,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.middleground),
+              color: AppColors.middleground.withAlpha(40),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.middleground),
             ),
-            child: const Center(
-              child: Icon(
-                Icons.qr_code_2,
-                size: 120,
+            child: QrImageView(
+              data: _activeInviteCode ?? '',
+              version: QrVersions.auto,
+              size: 180,
+              backgroundColor: Colors.transparent,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: AppColors.darkGreen,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
                 color: AppColors.darkGreen,
               ),
             ),
@@ -1377,7 +1395,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             Expanded(
               child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: _finalizeOnboarding,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
