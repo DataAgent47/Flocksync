@@ -904,7 +904,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
                 initialValue: _phoneNumber,
                 textFieldController: _phoneController,
-                countries: ['US', 'CA', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
+                countries: ['US', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
                 selectorConfig: const SelectorConfig(
                   selectorType: PhoneInputSelectorType.DIALOG,
                   useEmoji: true,
@@ -1210,7 +1210,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
                 initialValue: _phoneNumber,
                 textFieldController: _phoneController,
-                countries: ['US', 'CA', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
+                countries: ['US', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
                 selectorConfig: const SelectorConfig(
                   selectorType: PhoneInputSelectorType.DIALOG,
                   useEmoji: true,
