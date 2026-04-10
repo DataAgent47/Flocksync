@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/theme/flock_theme.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
@@ -9,6 +10,7 @@ import 'features/auth/services/auth_service.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/services/onboarding_firestore_service.dart';
+import 'features/settings/screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -93,16 +95,44 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 2; // start on Forums tab for testing
+  String? _firstName;
+  String? _buildingId;
+  bool _isManagement = false;
 
+  @override
+  void initState() {
+    super.initState();
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.user.uid)
+        .snapshots()
+        .listen((doc) {
+          if (!mounted) return;
+          final data = doc.data();
+          if (data == null) return;
+          setState(() {
+            final name = data['first_name'] as String?;
+            if (name != null && name.trim().isNotEmpty)
+              _firstName = name.trim();
+
+            // get Building ID from firestore
+            final onboardingState =
+                data['onboarding_state'] as Map<String, dynamic>?;
+            _buildingId = onboardingState?['property_id'] as String?;
+
+            _isManagement = (data['role'] as String?) == 'manager';
+          });
+        });
+  }
+
+  // Get real name from firestore
   String get _userId => widget.user.uid;
-  // TODO: replace with real first name from firestore
-  String get _userName => (widget.user.displayName?.trim().isNotEmpty ?? false)
-      ? widget.user.displayName!.trim()
-      : (widget.user.email?.split('@').first ?? 'Neighbor');
-
-  // TODO: replace with real property id from onboarding/profile data.
-  static const _mockBuildingId = 'building_test_001';
-  static const _mockIsManagement = false;
+  String get _userName {
+    if (_firstName != null) return _firstName!;
+    final displayName = widget.user.displayName?.trim();
+    if (displayName != null && displayName.isNotEmpty) return displayName;
+    return 'Neighbor';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,19 +143,17 @@ class _MainShellState extends State<MainShell> {
           _DashboardScreen(
             userId: _userId,
             userName: _userName,
-            buildingId: _mockBuildingId,
-            isManagement: _mockIsManagement,
+            buildingId: _buildingId ?? '',
+            isManagement: _isManagement,
             user: widget.user,
           ),
           const _PlaceholderScreen(label: 'Calendar'),
           _ForumsLandingScreen(
             userId: _userId,
             userName: _userName,
-            buildingId: _mockBuildingId,
-            isManagement: _mockIsManagement,
+            buildingId: _buildingId ?? '',
+            isManagement: _isManagement,
           ),
-          // const _PlaceholderScreen(label: 'Settings'),
-          // TODO: build proper settings screen
           _SettingsScreen(user: widget.user),
         ],
       ),
@@ -330,11 +358,11 @@ class AnnouncementCard extends StatelessWidget {
   final IconData icon;
 
   const AnnouncementCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.message,
     required this.icon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -465,6 +493,19 @@ class _ForumTile extends StatelessWidget {
   }
 }
 
+// ─── Settings screen ───────────────────────────────────────────────────────────────
+
+class _SettingsScreen extends StatelessWidget {
+  final User user;
+
+  const _SettingsScreen({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsScreen(user: user);
+  }
+}
+
 // ─── Bottom nav ────────────────────────────────────────────────────────────────
 
 class _FlockBottomNav extends StatelessWidget {
@@ -543,58 +584,6 @@ class _PlaceholderScreen extends StatelessWidget {
             const Text(
               'Coming soon',
               style: TextStyle(color: FlockColors.textSecondary, fontSize: 14),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-// Temporary screen for signing out
-class _SettingsScreen extends StatelessWidget {
-  const _SettingsScreen({required this.user});
-
-  final User user;
-
-  String get _uid => user.uid;
-
-  @override
-  Widget build(BuildContext context) {
-    final authService = AuthService();
-
-    return Scaffold(
-      backgroundColor: FlockColors.cream,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'UID',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: FlockColors.textSecondary,
-                letterSpacing: 0.8,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SelectableText(
-                _uid,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: FlockColors.darkGreen,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: () async => authService.signOut(),
-              icon: const Icon(Icons.logout),
-              label: const Text('Sign Out'),
             ),
           ],
         ),
