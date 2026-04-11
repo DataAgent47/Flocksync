@@ -227,17 +227,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                         : null,
                                   ),
                                 ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
-                                      .trim(),
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: FlockColors.darkGreen,
-                                  ),
-                                ),
                               ],
                             ),
                           ),

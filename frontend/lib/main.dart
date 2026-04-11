@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/theme/flock_theme.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/auth/services/auth_service.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/services/onboarding_firestore_service.dart';
@@ -112,8 +111,9 @@ class _MainShellState extends State<MainShell> {
           if (data == null) return;
           setState(() {
             final name = data['first_name'] as String?;
-            if (name != null && name.trim().isNotEmpty)
+            if (name != null && name.trim().isNotEmpty) {
               _firstName = name.trim();
+            }
 
             // get Building ID from firestore
             final onboardingState =

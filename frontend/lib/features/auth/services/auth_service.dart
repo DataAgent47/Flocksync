@@ -106,7 +106,7 @@ class AuthService {
     await user.updatePassword(newPassword);
   }
 
-  Future<void> deleteUser({String? currentPassword}) async {
+  Future<void> reauthenticate({String? currentPassword}) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw FirebaseAuthException(
@@ -114,8 +114,17 @@ class AuthService {
         message: 'No signed-in user found.',
       );
     }
-
     await _reauthenticate(user: user, currentPassword: currentPassword);
+  }
+
+  Future<void> deleteUser() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'not-authenticated',
+        message: 'No signed-in user found.',
+      );
+    }
     await user.delete();
   }
 
@@ -156,6 +165,8 @@ class AuthService {
       serverClientId:
           '1089004613765-pjk9ct5vb9o92rc7ftekr06p016qi1j9.apps.googleusercontent.com',
     );
+    // Sign out first to force a fresh account picker and avoid stale tokens.
+    await _googleSignIn.signOut();
     final googleUser = await _googleSignIn.authenticate();
     final googleAuth = googleUser.authentication;
     final credential = GoogleAuthProvider.credential(

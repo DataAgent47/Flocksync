@@ -73,6 +73,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontSize: 15,
                   ),
                 ),
+                const SizedBox(height: 16),
+                StreamBuilder(
+                  stream: _controller.profileStream(widget.user.uid),
+                  builder: (context, snapshot) {
+                    final profile = snapshot.data;
+                    final fullName = profile == null
+                        ? ''
+                        : '${profile.firstName} ${profile.lastName}'.trim();
+                    final authPhotoUrl =
+                        (FirebaseAuth.instance.currentUser?.photoURL ?? '')
+                            .trim();
+
+                    return Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: FlockColors.darkGreen,
+                              width: 2,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 30,
+                            backgroundColor: FlockColors.tan,
+                            backgroundImage: authPhotoUrl.isNotEmpty
+                                ? NetworkImage(authPhotoUrl)
+                                : null,
+                            child: authPhotoUrl.isEmpty
+                                ? const Icon(
+                                    Icons.person,
+                                    size: 30,
+                                    color: FlockColors.darkGreen,
+                                  )
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            fullName.isEmpty ? 'Your Profile' : fullName,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: FlockColors.darkGreen,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
                 if (_statusMessage != null) ...[
                   const SizedBox(height: 16),
                   FlockMessageBanner(

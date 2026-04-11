@@ -14,9 +14,16 @@ class SettingsController extends ChangeNotifier {
   }) : _authService = authService ?? AuthService(),
        _firestoreService = firestoreService ?? SettingsFirestoreService();
 
+  bool _disposed = false;
   bool isLoading = false;
   String? errorMessage;
   String? successMessage;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 
   bool get requiresPasswordReauth => _authService.requiresPasswordReauth;
 
@@ -88,10 +95,16 @@ class SettingsController extends ChangeNotifier {
   Future<bool> deleteAccount({String? currentPassword}) async {
     return _runAction(() async {
       final uid = _authService.currentUser?.uid;
+      // Reauth first — shows the Google popup immediately on user confirmation,
+      // before any data is deleted and before the UI can navigate away.
+      await _authService.reauthenticate(currentPassword: currentPassword);
+      // Firestore must be deleted before the auth account — Firebase invalidates
+      // the token immediately on user.delete(), making subsequent Firestore writes fail.
       if (uid != null) {
         await _firestoreService.deleteAccountData(uid);
       }
-      await _authService.deleteUser(currentPassword: currentPassword);
+      await _authService.deleteUser();
+      await _authService.signOut();
     });
   }
 
@@ -115,7 +128,7 @@ class SettingsController extends ChangeNotifier {
       return false;
     } finally {
       isLoading = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 

@@ -32,22 +32,58 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   final _newEmailController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _emailCurrentPasswordController = TextEditingController();
-  final _passwordCurrentPasswordController = TextEditingController();
 
   @override
   void dispose() {
     _newEmailController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
-    _emailCurrentPasswordController.dispose();
-    _passwordCurrentPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<String?> _promptCurrentPassword() async {
+    return showDialog<String?>(
+      context: context,
+      builder: (context) {
+        final passwordController = TextEditingController();
+        return AlertDialog(
+          title: const Text('Password Required'),
+          content: TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Current Password',
+              prefixIcon: Icon(Icons.lock_outline),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, passwordController.text);
+              },
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _changeEmail() async {
     if (!_emailFormKey.currentState!.validate()) {
       return;
+    }
+
+    String? currentPassword;
+    if (widget.controller.requiresPasswordReauth) {
+      currentPassword = await _promptCurrentPassword();
+      if (!mounted || currentPassword == null) {
+        return;
+      }
     }
 
     setState(() {
@@ -60,7 +96,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       uid: widget.uid,
       newEmail: _newEmailController.text,
       currentPassword: widget.controller.requiresPasswordReauth
-          ? _emailCurrentPasswordController.text
+          ? currentPassword
           : null,
     );
 
@@ -75,7 +111,6 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         _statusSection = 'email';
       });
       _newEmailController.clear();
-      _emailCurrentPasswordController.clear();
     } else {
       setState(() {
         _statusMessage = widget.controller.errorMessage ?? 'Action failed.';
@@ -90,6 +125,14 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       return;
     }
 
+    String? currentPassword;
+    if (widget.controller.requiresPasswordReauth) {
+      currentPassword = await _promptCurrentPassword();
+      if (!mounted || currentPassword == null) {
+        return;
+      }
+    }
+
     setState(() {
       _statusMessage = null;
       _statusIsError = false;
@@ -99,7 +142,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     final ok = await widget.controller.changePassword(
       newPassword: _newPasswordController.text,
       currentPassword: widget.controller.requiresPasswordReauth
-          ? _passwordCurrentPasswordController.text
+          ? currentPassword
           : null,
     );
 
@@ -115,7 +158,6 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       });
       _newPasswordController.clear();
       _confirmPasswordController.clear();
-      _passwordCurrentPasswordController.clear();
     } else {
       setState(() {
         _statusMessage = widget.controller.errorMessage ?? 'Action failed.';
@@ -267,21 +309,6 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                             },
                           ),
                           const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _emailCurrentPasswordController,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Current Password',
-                              prefixIcon: Icon(Icons.lock_outline),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Current password is required.';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
                           FilledButton(
                             onPressed: widget.controller.isLoading
                                 ? null
@@ -344,21 +371,6 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                             },
                           ),
                           const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _passwordCurrentPasswordController,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Current Password',
-                              prefixIcon: Icon(Icons.lock_outline),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Current password is required.';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
                           FilledButton(
                             onPressed: widget.controller.isLoading
                                 ? null
@@ -378,28 +390,30 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         border: Border.all(color: FlockColors.tan),
                       ),
                       child: const Text(
-                        'Email and password changes are hidden for Google-auth accounts.',
+                        'Account changes are hidden for Google-auth accounts.',
                         style: TextStyle(color: FlockColors.darkGreen),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 28),
-                  OutlinedButton.icon(
-                    onPressed: widget.controller.isLoading
-                        ? null
-                        : _deleteAccount,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade800,
+                  if (isPasswordUser) ...[
+                    const SizedBox(height: 28),
+                    OutlinedButton.icon(
+                      onPressed: widget.controller.isLoading
+                          ? null
+                          : _deleteAccount,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade800,
+                      ),
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Delete Account'),
                     ),
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Delete Account'),
-                  ),
-                  if (_statusMessage != null && _statusSection == 'delete') ...[
-                    const SizedBox(height: 12),
-                    FlockMessageBanner(
-                      message: _statusMessage!,
-                      isError: _statusIsError,
-                    ),
+                    if (_statusMessage != null && _statusSection == 'delete') ...[
+                      const SizedBox(height: 12),
+                      FlockMessageBanner(
+                        message: _statusMessage!,
+                        isError: _statusIsError,
+                      ),
+                    ],
                   ],
                 ],
               ),

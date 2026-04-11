@@ -95,7 +95,7 @@ class ImageGrid extends StatelessWidget {
                         color: FlockColors.midGreen, strokeWidth: 2)),
               );
             },
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               color: FlockColors.cardBackground,
               child: const Icon(Icons.broken_image_outlined,
                   color: FlockColors.tan),
@@ -178,7 +178,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
                     child: CircularProgressIndicator(
                         color: FlockColors.tan));
               },
-              errorBuilder: (_, __, ___) => const Center(
+              errorBuilder: (_, _, _) => const Center(
                 child: Icon(Icons.broken_image_outlined,
                     color: FlockColors.tan, size: 48),
               ),
