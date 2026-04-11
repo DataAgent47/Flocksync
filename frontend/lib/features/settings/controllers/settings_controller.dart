@@ -95,11 +95,7 @@ class SettingsController extends ChangeNotifier {
   Future<bool> deleteAccount({String? currentPassword}) async {
     return _runAction(() async {
       final uid = _authService.currentUser?.uid;
-      // Reauth first — shows the Google popup immediately on user confirmation,
-      // before any data is deleted and before the UI can navigate away.
       await _authService.reauthenticate(currentPassword: currentPassword);
-      // Firestore must be deleted before the auth account — Firebase invalidates
-      // the token immediately on user.delete(), making subsequent Firestore writes fail.
       if (uid != null) {
         await _firestoreService.deleteAccountData(uid);
       }
@@ -142,6 +138,10 @@ class SettingsController extends ChangeNotifier {
     }
     if (normalized.contains('requires-recent-login')) {
       return 'Please reauthenticate and try again.';
+    }
+    if (normalized.contains('popup-closed-by-user') ||
+        normalized.contains('cancelled-popup-request')) {
+      return 'Sign-in was cancelled. Please try again.';
     }
     if (normalized.contains('email-already-in-use')) {
       return 'That email is already linked to another account.';

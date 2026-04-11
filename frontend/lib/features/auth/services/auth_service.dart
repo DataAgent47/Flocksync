@@ -132,6 +132,8 @@ class AuthService {
     required User user,
     String? currentPassword,
   }) async {
+
+
     if (user.providerData.any((info) => info.providerId == 'password')) {
       final email = user.email;
       if (email == null || email.trim().isEmpty) {
@@ -157,7 +159,7 @@ class AuthService {
     }
 
     if (kIsWeb) {
-      await user.reauthenticateWithProvider(GoogleAuthProvider());
+      await user.reauthenticateWithPopup(GoogleAuthProvider());
       return;
     }
 
@@ -165,7 +167,6 @@ class AuthService {
       serverClientId:
           '1089004613765-pjk9ct5vb9o92rc7ftekr06p016qi1j9.apps.googleusercontent.com',
     );
-    // Sign out first to force a fresh account picker and avoid stale tokens.
     await _googleSignIn.signOut();
     final googleUser = await _googleSignIn.authenticate();
     final googleAuth = googleUser.authentication;

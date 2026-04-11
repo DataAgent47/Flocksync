@@ -395,25 +395,23 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       ),
                     ),
                   ],
-                  if (isPasswordUser) ...[
-                    const SizedBox(height: 28),
-                    OutlinedButton.icon(
-                      onPressed: widget.controller.isLoading
-                          ? null
-                          : _deleteAccount,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red.shade800,
-                      ),
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Delete Account'),
+                  const SizedBox(height: 28),
+                  OutlinedButton.icon(
+                    onPressed: widget.controller.isLoading
+                        ? null
+                        : _deleteAccount,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red.shade800,
                     ),
-                    if (_statusMessage != null && _statusSection == 'delete') ...[
-                      const SizedBox(height: 12),
-                      FlockMessageBanner(
-                        message: _statusMessage!,
-                        isError: _statusIsError,
-                      ),
-                    ],
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Delete Account'),
+                  ),
+                  if (_statusMessage != null && _statusSection == 'delete') ...[
+                    const SizedBox(height: 12),
+                    FlockMessageBanner(
+                      message: _statusMessage!,
+                      isError: _statusIsError,
+                    ),
                   ],
                 ],
               ),
