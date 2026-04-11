@@ -49,6 +49,12 @@ dependencies:
 
   # Image picking
   image_picker: ^1.0.0
+
+  # Phone number input
+  intl_phone_number_input: ^0.7.4
+
+  # QR code generation
+  qr_flutter: ^4.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -137,6 +137,7 @@ class OnboardingFirestoreService {
     required int previousStep,
     required int nextStep,
     required bool isManagement,
+    required bool usedInviteCode,
     required String firstName,
     required String lastName,
     required String contactEmail,
@@ -153,7 +154,6 @@ class OnboardingFirestoreService {
     required String? verifiedRegion,
     required String? verifiedPostalCode,
     required String? verifiedCountryCode,
-    required bool completed,
   }) async {
     var activePropertyId = propertyId;
     String? generatedInviteCode;
@@ -176,7 +176,7 @@ class OnboardingFirestoreService {
 
     final usersRef = _firestore.collection('users').doc(uid);
     final existingUser = await usersRef.get();
-
+    final timestamp = FieldValue.serverTimestamp();
     final safeContactEmail = contactEmail.trim().isEmpty
         ? fallbackAuthEmail.trim()
         : contactEmail.trim();
@@ -192,19 +192,23 @@ class OnboardingFirestoreService {
       'onboarding_state': {
         'step': stepKeyFor(nextStep),
         'property_id': activePropertyId,
-        'completed': completed,
+        'completed': false,
       },
-      'updated_at': FieldValue.serverTimestamp(),
+      'updated_at': timestamp,
     };
 
     if (!existingUser.exists) {
-      userPayload['created_at'] = FieldValue.serverTimestamp();
+      userPayload['created_at'] = timestamp;
     }
 
     await usersRef.set(userPayload, SetOptions(merge: true));
 
     if (nextStep == 6 && activePropertyId != null) {
-      await _upsertResident(uid: uid, propertyId: activePropertyId);
+      await _upsertResident(
+        uid: uid,
+        propertyId: activePropertyId,
+        isVerified: usedInviteCode,
+      );
     }
 
     if (nextStep == 11 && activePropertyId != null) {
@@ -282,6 +286,7 @@ class OnboardingFirestoreService {
         ? (addressParts['country_code'] ?? '')
         : verifiedCountryCode!.trim().toUpperCase();
     final propertyRef = _firestore.collection('properties').doc();
+    final timestamp = FieldValue.serverTimestamp();
 
     final payload = <String, dynamic>{
       'property_id': propertyRef.id,
@@ -294,8 +299,8 @@ class OnboardingFirestoreService {
       'longitude': longitude,
       'address_display_name': normalizedAddress,
       'invite_code': inviteCode,
-      'created_at': FieldValue.serverTimestamp(),
-      'updated_at': FieldValue.serverTimestamp(),
+      'created_at': timestamp,
+      'updated_at': timestamp,
     };
 
     await propertyRef.set(payload);
@@ -306,21 +311,23 @@ class OnboardingFirestoreService {
   Future<void> _upsertResident({
     required String uid,
     required String propertyId,
+    required bool isVerified,
   }) async {
     final docId = '${propertyId}_$uid';
     final residentRef = _firestore.collection('residents').doc(docId);
     final existingResident = await residentRef.get();
+    final timestamp = FieldValue.serverTimestamp();
 
     final payload = <String, dynamic>{
       'resident_id': uid,
       'property_id': propertyId,
-      'is_verified': false,
-      'verified_at': null,
-      'updated_at': FieldValue.serverTimestamp(),
+      'is_verified': isVerified,
+      'verified_at': isVerified ? timestamp : null,
+      'updated_at': timestamp,
     };
 
     if (!existingResident.exists) {
-      payload['created_at'] = FieldValue.serverTimestamp();
+      payload['created_at'] = timestamp;
     }
 
     await residentRef.set(payload, SetOptions(merge: true));
@@ -334,16 +341,18 @@ class OnboardingFirestoreService {
     final docId = '${propertyId}_$uid';
     final managerRef = _firestore.collection('managers').doc(docId);
     final existingManager = await managerRef.get();
-
+    final timestamp = FieldValue.serverTimestamp();
     final payload = <String, dynamic>{
       'manager_id': uid,
       'property_id': propertyId,
       'manager_role': managementRole,
-      'updated_at': FieldValue.serverTimestamp(),
+      'is_verified': false,
+      'verified_at': null,
+      'updated_at': timestamp,
     };
 
     if (!existingManager.exists) {
-      payload['created_at'] = FieldValue.serverTimestamp();
+      payload['created_at'] = timestamp;
     }
 
     await managerRef.set(payload, SetOptions(merge: true));
@@ -408,6 +417,13 @@ class OnboardingFirestoreService {
       'postal_code': postalCode,
       'country_code': countryCode,
     };
+  }
+
+  Future<void> finalizeOnboarding({required String uid}) async {
+    await _firestore.collection('users').doc(uid).update({
+      'onboarding_state.completed': true,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
   }
 
   /// Check if user has completed onboarding (returns a Stream for real-time updates)
