@@ -199,12 +199,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         }
 
         final onboardingState = data['onboarding_state'];
-        if (onboardingState is Map<String, dynamic>) {
-          final propertyId = onboardingState['property_id'] as String?;
-          if (propertyId != null && propertyId.isNotEmpty) {
-            _activePropertyId = propertyId;
-          }
+        final propertyId = data['property_id'] as String?;
+        if (propertyId != null && propertyId.isNotEmpty) {
+          _activePropertyId = propertyId;
+        }
 
+        if (onboardingState is Map<String, dynamic>) {
           final remoteStepKey = onboardingState['step'] as String?;
           final remoteStep = _onboardingStore.stepFromKey(remoteStepKey);
           if (remoteStep != null && remoteStep != _flow.step) {

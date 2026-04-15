@@ -116,9 +116,7 @@ class _MainShellState extends State<MainShell> {
             }
 
             // get Building ID from firestore
-            final onboardingState =
-                data['onboarding_state'] as Map<String, dynamic>?;
-            _buildingId = onboardingState?['property_id'] as String?;
+            _buildingId = data['property_id'] as String?;
 
             _isManagement = (data['role'] as String?) == 'manager';
           });
