@@ -41,9 +41,20 @@ dependencies:
 
   # State management
   provider: ^6.1.0
+  
+  # Maps
+  http: ^1.5.0
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
 
   # Image picking
   image_picker: ^1.0.0
+
+  # Phone number input
+  intl_phone_number_input: ^0.7.4
+
+  # QR code generation
+  qr_flutter: ^4.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

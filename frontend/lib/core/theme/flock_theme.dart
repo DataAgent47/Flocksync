@@ -20,6 +20,11 @@ class FlockColors {
   static const textSecondary = Color(0xFF819067);
   static const textMuted = Color(0xFFADAA88);
   static const errorRed = Color(0xFF8B2E00);
+
+  // Aliases to match AppColors naming from login-demo branch
+  static const background = cream;
+  static const middleground = tan;
+  static const green2 = midGreen;
 }
 
 // ─── ThemeData ────────────────────────────────────────────────────────────────
@@ -71,6 +76,14 @@ ThemeData flockTheme() {
       filled: true,
       fillColor: FlockColors.cardBackground,
       labelStyle: const TextStyle(color: FlockColors.midGreen),
+      prefixIconColor: WidgetStateColor.resolveWith((states) {
+        if (states.contains(WidgetState.error)) return FlockColors.errorRed;
+        return FlockColors.darkGreen;
+      }),
+      suffixIconColor: WidgetStateColor.resolveWith((states) {
+        if (states.contains(WidgetState.error)) return FlockColors.errorRed;
+        return FlockColors.darkGreen;
+      }),
       hintStyle: TextStyle(
         color: FlockColors.textMuted,
         fontStyle: FontStyle.italic,
@@ -86,6 +99,14 @@ ThemeData flockTheme() {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: FlockColors.darkGreen, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: FlockColors.errorRed, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: FlockColors.errorRed, width: 1.5),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -149,3 +170,6 @@ ThemeData flockTheme() {
     ),
   );
 }
+// Alias for backwards compatibility with login-demo branch
+// Teammates can use AppColors.darkGreen or FlockColors.darkGreen — both work
+typedef AppColors = FlockColors;
