@@ -5,6 +5,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/theme/flock_theme.dart';
 import 'firebase_options.dart';
+import 'pages/personal_calendar_page.dart';
+import 'color.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
 import 'features/auth/screens/login_screen.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
@@ -23,6 +33,18 @@ class FlockSyncApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: "FlockSync",
+      debugShowCheckedModeBanner: false,
+
+      theme: ThemeData(
+        primaryColor: AppColors.darkGreen,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.darkGreen,
+        ),
+      ),
+
+      home: const PersonalCalendarPage(),
       title: 'FlockSync',
       debugShowCheckedModeBanner: false,
       theme: flockTheme(),
