@@ -169,18 +169,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _setController(_lastNameController, data['last_name']);
         final storedPhone = data['phone'] as String?;
         if (storedPhone != null && storedPhone.isNotEmpty) {
+          _setController(_phoneController, storedPhone);
           if (storedPhone.startsWith('+')) {
             try {
-              final parsed = await PhoneNumber.getRegionInfoFromPhoneNumber(storedPhone);
+              final parsed = await PhoneNumber.getRegionInfoFromPhoneNumber(
+                storedPhone,
+              );
               setState(() {
                 _phoneNumber = parsed;
-                _phoneInputKey = ValueKey(storedPhone);
+                _phoneInputKey = ValueKey(
+                  'onboarding_${parsed.isoCode ?? 'unknown'}_$storedPhone',
+                );
               });
-            } catch (_) {
-              _setController(_phoneController, storedPhone);
+            } catch (_) { // do nothing
             }
-          } else {
-            _setController(_phoneController, storedPhone);
           }
         }
         _setController(_contactEmailController, data['contact_email']);

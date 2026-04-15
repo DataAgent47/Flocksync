@@ -76,6 +76,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
       final storedPhone = profile.phone.trim();
       if (storedPhone.isNotEmpty) {
+        _setController(_phoneController, storedPhone);
         if (storedPhone.startsWith('+')) {
           try {
             final parsed = await PhoneNumber.getRegionInfoFromPhoneNumber(
@@ -84,13 +85,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             if (!mounted) {
               return;
             }
-            _phoneNumber = parsed;
-            _phoneInputKey = ValueKey('profile_$storedPhone');
+            setState(() {
+              _phoneNumber = parsed;
+              _phoneInputKey = ValueKey(
+                'profile_${parsed.isoCode ?? 'unknown'}_$storedPhone',
+              );
+            });
           } catch (_) {
-            _setController(_phoneController, storedPhone);
           }
-        } else {
-          _setController(_phoneController, storedPhone);
         }
       }
 
@@ -163,8 +165,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
-        final authPhotoUrl =
-            (FirebaseAuth.instance.currentUser?.photoURL ?? '').trim();
+        final authPhotoUrl = (FirebaseAuth.instance.currentUser?.photoURL ?? '')
+            .trim();
         return Scaffold(
           appBar: AppBar(title: const Text('Profile Settings')),
           body: _isHydrating && !_hydrated
@@ -284,7 +286,16 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             },
                             initialValue: _phoneNumber,
                             textFieldController: _phoneController,
-                            countries: ['US', 'MX', 'GB', 'FR', 'DE', 'IT', 'ES', 'NL'],
+                            countries: [
+                              'US',
+                              'MX',
+                              'GB',
+                              'FR',
+                              'DE',
+                              'IT',
+                              'ES',
+                              'NL',
+                            ],
                             selectorConfig: const SelectorConfig(
                               selectorType: PhoneInputSelectorType.DIALOG,
                               useEmoji: true,
