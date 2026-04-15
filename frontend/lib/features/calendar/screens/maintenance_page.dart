@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/calendar.dart';
 import '../widgets/upcoming.dart';
-import '../color.dart';
+import '../../../core/theme/flock_theme.dart';
 
 class MaintenancePage extends StatelessWidget {
   const MaintenancePage({super.key});

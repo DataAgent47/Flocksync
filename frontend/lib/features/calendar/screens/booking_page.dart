@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../color.dart';
+import '../../../core/theme/flock_theme.dart';
 
 class BookingPage extends StatefulWidget {
 
