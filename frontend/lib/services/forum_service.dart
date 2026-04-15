@@ -19,17 +19,18 @@ class ForumService {
   /// Stream all posts for a building, newest first. Pinned posts float to top.
   Stream<List<ForumPost>> postsStream(String buildingId,
       {PostCategory? category}) {
-    Query query = _posts
+    final query = _posts
         .where('buildingId', isEqualTo: buildingId)
         .orderBy('isPinned', descending: true)
         .orderBy('createdAt', descending: true);
 
-    if (category != null) {
-      query = query.where('category', isEqualTo: category.name);
-    }
-
     return query.snapshots().map(
-          (snap) => snap.docs.map((d) => ForumPost.fromFirestore(d)).toList(),
+          (snap) {
+            final posts =
+                snap.docs.map((d) => ForumPost.fromFirestore(d)).toList();
+            if (category == null) return posts;
+            return posts.where((post) => post.category == category).toList();
+          },
         );
   }
 
@@ -55,22 +56,23 @@ class ForumService {
     final imageUrls = await _uploadImages(imageFiles, 'forum_posts');
 
     final ref = _posts.doc();
-    final now = DateTime.now();
-    final post = ForumPost(
-      id: ref.id,
-      authorId: authorId,
-      authorName: authorName,
-      authorAvatarUrl: authorAvatarUrl,
-      buildingId: buildingId,
-      title: title,
-      body: body,
-      category: category,
-      imageUrls: imageUrls,
-      createdAt: now,
-      updatedAt: now,
-    );
-
-    await ref.set(post.toMap());
+    await ref.set({
+      'authorId': authorId,
+      'authorUid': authorId,
+      'authorName': authorName,
+      'authorAvatarUrl': authorAvatarUrl,
+      'buildingId': buildingId,
+      'title': title,
+      'body': body,
+      'content': body,
+      'category': category.name,
+      'imageUrls': imageUrls,
+      'upvotedBy': <String>[],
+      'replyCount': 0,
+      'isPinned': false,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
     return ref.id;
   }
 

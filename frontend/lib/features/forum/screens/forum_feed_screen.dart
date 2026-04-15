@@ -57,6 +57,7 @@ class _ForumFeedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ForumController>();
+    final hasBuildingContext = buildingId.trim().isNotEmpty;
 
     return Scaffold(
       backgroundColor: FlockColors.cream,
@@ -81,20 +82,22 @@ class _ForumFeedView extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChangeNotifierProvider.value(
-              value: controller,
-              child: CreatePostScreen(
-                buildingId: buildingId,
-                currentUserId: currentUserId,
-                currentUserName: currentUserName,
-                currentUserAvatarUrl: currentUserAvatarUrl,
-              ),
-            ),
-          ),
-        ),
+        onPressed: hasBuildingContext
+            ? () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: controller,
+                      child: CreatePostScreen(
+                        buildingId: buildingId,
+                        currentUserId: currentUserId,
+                        currentUserName: currentUserName,
+                        currentUserAvatarUrl: currentUserAvatarUrl,
+                      ),
+                    ),
+                  ),
+                )
+            : null,
         backgroundColor: FlockColors.darkGreen,
         foregroundColor: FlockColors.cream,
         icon: const Icon(Icons.edit_outlined, size: 18),
@@ -113,7 +116,13 @@ class _ForumFeedView extends StatelessWidget {
               onSelected: controller.setCategory),
 
           Expanded(
-            child: StreamBuilder<List<ForumPost>>(
+            child: !hasBuildingContext
+                ? const _EmptyState(
+                    icon: Icons.location_city_outlined,
+                    message:
+                        'We are still loading your building.\nPlease wait a moment and try again.',
+                  )
+                : StreamBuilder<List<ForumPost>>(
               stream: controller.postsStream(buildingId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -122,9 +131,10 @@ class _ForumFeedView extends StatelessWidget {
                           color: FlockColors.midGreen));
                 }
                 if (snapshot.hasError) {
+                  final message = _friendlyErrorMessage(snapshot.error);
                   return _EmptyState(
                       icon: Icons.error_outline,
-                      message: 'Something went wrong.\nPlease try again.');
+                      message: message);
                 }
 
                 final posts = snapshot.data ?? [];
@@ -221,6 +231,24 @@ class _ForumFeedView extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _friendlyErrorMessage(Object? error) {
+    final raw = (error ?? '').toString().toLowerCase();
+    if (raw.contains('permission-denied') ||
+        raw.contains('missing or insufficient permissions')) {
+      return 'You do not have access to view posts right now.\nPlease sign in again or check your account permissions.';
+    }
+    if (raw.contains('unauthenticated')) {
+      return 'You are signed out.\nPlease sign in to view forum posts.';
+    }
+    if (raw.contains('unavailable') ||
+        raw.contains('network') ||
+        raw.contains('failed to get document') ||
+        raw.contains('offline')) {
+      return 'Unable to reach the database right now.\nPlease check your connection and try again.';
+    }
+    return 'Something went wrong while loading posts.\nPlease try again.';
   }
 }
 

@@ -41,16 +41,26 @@ class ForumPost {
 
   factory ForumPost.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final rawCategory = (data['category'] ?? 'general').toString().trim();
+    final normalizedCategory = switch (rawCategory.toLowerCase()) {
+      'maintenence' => 'maintenance',
+      'announcement' => 'announcement',
+      'maintenance' => 'maintenance',
+      'general' => 'general',
+      'question' => 'question',
+      'marketplace' => 'marketplace',
+      _ => 'general',
+    };
     return ForumPost(
       id: doc.id,
-      authorId: data['authorId'] ?? '',
+      authorId: data['authorId'] ?? data['authorUid'] ?? '',
       authorName: data['authorName'] ?? 'Anonymous',
       authorAvatarUrl: data['authorAvatarUrl'] ?? '',
       buildingId: data['buildingId'] ?? '',
       title: data['title'] ?? '',
-      body: data['body'] ?? '',
+      body: data['body'] ?? data['content'] ?? '',
       category: PostCategory.values.firstWhere(
-        (e) => e.name == (data['category'] ?? 'general'),
+        (e) => e.name == normalizedCategory,
         orElse: () => PostCategory.general,
       ),
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
@@ -65,11 +75,13 @@ class ForumPost {
   Map<String, dynamic> toMap() {
     return {
       'authorId': authorId,
+      'authorUid': authorId,
       'authorName': authorName,
       'authorAvatarUrl': authorAvatarUrl,
       'buildingId': buildingId,
       'title': title,
       'body': body,
+      'content': body,
       'category': category.name,
       'imageUrls': imageUrls,
       'upvotedBy': upvotedBy,

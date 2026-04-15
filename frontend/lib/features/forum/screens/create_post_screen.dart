@@ -51,6 +51,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (widget.buildingId.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Your building is still loading. Please wait, then try posting again.',
+          ),
+        ),
+      );
+      return;
+    }
     setState(() => _isSubmitting = true);
     final controller = context.read<ForumController>();
     final postId = await controller.createPost(
@@ -65,7 +75,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
     if (mounted) {
       setState(() => _isSubmitting = false);
-      if (postId != null) Navigator.pop(context);
+      if (postId != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Post created successfully.')),
+        );
+        Navigator.pop(context);
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(controller.errorMessage ?? 'Failed to create post.'),
+        ),
+      );
     }
   }
 
@@ -91,7 +112,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             strokeWidth: 2,
                             color: FlockColors.darkGreen)))
                 : FilledButton(
-                    onPressed: _submit,
+                    onPressed: _isSubmitting ? null : _submit,
                     style: FilledButton.styleFrom(
                       backgroundColor: FlockColors.darkGreen,
                       foregroundColor: FlockColors.cream,
@@ -200,6 +221,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               controller: _bodyController,
               textCapitalization: TextCapitalization.sentences,
               maxLines: 8,
+              maxLength: 2000,
               style: const TextStyle(color: FlockColors.darkGreen),
               decoration: InputDecoration(
                 labelText: 'Details',
