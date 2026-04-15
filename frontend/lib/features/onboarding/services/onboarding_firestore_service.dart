@@ -77,12 +77,9 @@ class OnboardingFirestoreService {
 
     var propertyId = preferredPropertyId;
     if ((propertyId == null || propertyId.isEmpty) && userData != null) {
-      final onboardingState = userData['onboarding_state'];
-      if (onboardingState is Map<String, dynamic>) {
-        final remotePropertyId = onboardingState['property_id'];
-        if (remotePropertyId is String && remotePropertyId.isNotEmpty) {
-          propertyId = remotePropertyId;
-        }
+      final topLevelPropertyId = userData['property_id'];
+      if (topLevelPropertyId is String && topLevelPropertyId.isNotEmpty) {
+        propertyId = topLevelPropertyId;
       }
     }
 
@@ -189,9 +186,9 @@ class OnboardingFirestoreService {
       'phone': phone.trim(),
       'apt_number': aptNumber.trim().isEmpty ? null : aptNumber.trim(),
       'role': isManagement ? 'manager' : 'resident',
+      'property_id': activePropertyId,
       'onboarding_state': {
         'step': stepKeyFor(nextStep),
-        'property_id': activePropertyId,
         'completed': false,
       },
       'updated_at': timestamp,

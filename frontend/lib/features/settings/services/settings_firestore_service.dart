@@ -63,10 +63,7 @@ class SettingsFirestoreService {
     final refsToDelete = <DocumentReference>{};
 
     final role = (userData['role'] as String? ?? '').trim();
-    final onboardingState =
-        userData['onboarding_state'] as Map<String, dynamic>?;
-    final propertyId = (onboardingState?['property_id'] as String? ?? '')
-        .trim();
+    final propertyId = (userData['property_id'] as String? ?? '').trim();
 
     if (propertyId.isNotEmpty) {
       if (role == 'manager') {
