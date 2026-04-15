@@ -145,7 +145,7 @@ class _ForumTile extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _ForumTile({super.key, required this.label, this.onTap});
+  const _ForumTile({required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -231,7 +231,7 @@ class _FlockBottomNav extends StatelessWidget {
 
 class _PlaceholderScreen extends StatelessWidget {
   final String label;
-  const _PlaceholderScreen({super.key, required this.label});
+  const _PlaceholderScreen({required this.label});
 
   @override
   Widget build(BuildContext context) {
