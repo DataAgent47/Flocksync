@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../Pages/booking_page.dart';
-import '../color.dart';
+import '../screens/booking_page.dart';
+import '../../../core/theme/flock_theme.dart';
 
 class MaintenanceCalendar extends StatefulWidget {
   const MaintenanceCalendar({super.key});

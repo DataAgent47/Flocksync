@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../color.dart';
-import '../pages/maintenance_page.dart';
+import '../../../core/theme/flock_theme.dart';
+import 'maintenance_page.dart';
 
 class PersonalCalendarPage extends StatefulWidget {
   const PersonalCalendarPage({super.key});

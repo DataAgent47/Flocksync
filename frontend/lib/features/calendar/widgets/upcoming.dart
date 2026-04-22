@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../color.dart';
+import '../../../core/theme/flock_theme.dart';
 
 class UpcomingMaintenance extends StatelessWidget {
   const UpcomingMaintenance({super.key});
