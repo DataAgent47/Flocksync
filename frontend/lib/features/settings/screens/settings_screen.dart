@@ -5,6 +5,7 @@ import '../../../core/theme/flock_theme.dart';
 import '../../../core/widgets/flock_message_banner.dart';
 import '../../../core/widgets/settings_tile.dart';
 import '../controllers/settings_controller.dart';
+import 'building_settings_screen.dart';
 import 'profile_settings_screen.dart';
 import 'security_settings_screen.dart';
 
@@ -143,6 +144,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => ProfileSettingsScreen(
+                          uid: widget.user.uid,
+                          controller: _controller,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                SettingsTile(
+                  title: 'Building Settings',
+                  subtitle:
+                      'View or edit your building information.',
+                  leadingIcon: Icons.apartment_outlined,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BuildingSettingsScreen(
                           uid: widget.user.uid,
                           controller: _controller,
                         ),
