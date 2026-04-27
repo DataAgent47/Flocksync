@@ -5,6 +5,7 @@ class SettingsUserProfile {
   final String phone;
   final String role;
   final String apartmentNumber;
+  final String propertyId;
 
   const SettingsUserProfile({
     required this.firstName,
@@ -13,6 +14,7 @@ class SettingsUserProfile {
     required this.phone,
     required this.role,
     required this.apartmentNumber,
+    required this.propertyId,
   });
 
   factory SettingsUserProfile.fromMap(Map<String, dynamic> data) {
@@ -23,6 +25,7 @@ class SettingsUserProfile {
       phone: (data['phone'] as String? ?? '').trim(),
       role: (data['role'] as String? ?? 'resident').trim(),
       apartmentNumber: (data['apt_number'] as String? ?? '').trim(),
+      propertyId: (data['property_id'] as String? ?? '').trim(),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../auth/services/auth_service.dart';
+import '../models/settings_property_info.dart';
 import '../models/settings_user_profile.dart';
 import '../services/settings_firestore_service.dart';
 
@@ -31,8 +32,38 @@ class SettingsController extends ChangeNotifier {
     return _firestoreService.profileStream(uid);
   }
 
+  Stream<SettingsPropertyInfo?> propertyStream(String propertyId) {
+    return _firestoreService.propertyStream(propertyId);
+  }
+
+  Stream<String?> managerRoleStream({
+    required String uid,
+    required String propertyId,
+  }) {
+    return _firestoreService.managerRoleStream(
+      uid: uid,
+      propertyId: propertyId,
+    );
+  }
+
+  Stream<bool?> membershipVerificationStream({
+    required String uid,
+    required String propertyId,
+    required String role,
+  }) {
+    return _firestoreService.membershipVerificationStream(
+      uid: uid,
+      propertyId: propertyId,
+      role: role,
+    );
+  }
+
   Future<SettingsUserProfile?> hydrateProfile(String uid) {
     return _firestoreService.hydrateProfile(uid);
+  }
+
+  Future<SettingsPropertyInfo?> hydrateProperty(String propertyId) {
+    return _firestoreService.hydrateProperty(propertyId);
   }
 
   Future<bool> saveProfile({
@@ -89,6 +120,13 @@ class SettingsController extends ChangeNotifier {
   Future<bool> signOut() async {
     return _runAction(() async {
       await _authService.signOut();
+    });
+  }
+
+  Future<bool> rerollInviteCode({required String uid}) async {
+    return _runAction(() async {
+      final newCode = await _firestoreService.rerollInviteCode(uid: uid);
+      successMessage = 'Invite code updated: $newCode';
     });
   }
 
