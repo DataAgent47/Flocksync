@@ -93,7 +93,7 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 2; // start on Forums tab for testing
+  int _currentIndex = 0;
   String? _firstName;
   String? _buildingId;
   bool _isManagement = false;
@@ -145,6 +145,8 @@ class _MainShellState extends State<MainShell> {
             isManagement: _isManagement,
             user: widget.user,
           ),
+          // TODO: replace placeholder
+          const _PlaceholderScreen(label: 'Users'),
           // TODO: replace placeholder
           const _PlaceholderScreen(label: 'Calendar'),
           _ForumsLandingScreen(
@@ -530,6 +532,11 @@ class _FlockBottomNav extends StatelessWidget {
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
           label: 'Dashboard',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.group_outlined),
+          activeIcon: Icon(Icons.group),
+          label: 'Users',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.calendar_today_outlined),
