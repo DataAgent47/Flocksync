@@ -10,6 +10,7 @@ import 'features/forum/screens/forum_feed_screen.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/services/onboarding_firestore_service.dart';
 import 'features/settings/screens/settings_screen.dart';
+import 'features/calendar/screens/personal_calendar_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -145,8 +146,7 @@ class _MainShellState extends State<MainShell> {
             isManagement: _isManagement,
             user: widget.user,
           ),
-          // TODO: replace placeholder
-          const _PlaceholderScreen(label: 'Calendar'),
+          const PersonalCalendarPage(),
           _ForumsLandingScreen(
             userId: _userId,
             userName: _userName,
