@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/flock_theme.dart';
-import 'maintenance_page.dart';
+import 'package:flocksync/core/theme/flock_theme.dart';
+import '../screens/maintenance_page.dart';
 
 class PersonalCalendarPage extends StatefulWidget {
   const PersonalCalendarPage({super.key});
@@ -12,8 +12,6 @@ class PersonalCalendarPage extends StatefulWidget {
 class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
 
   DateTime currentMonth = DateTime.now();
-
-  // The storge is local for now to test with, will connect to firebase in future
   Map<String, List<Map<String, String>>> events = {};
 
   String monthName(int month) {
@@ -27,6 +25,30 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
 
   String getDateKey(DateTime date) {
     return "${date.year}-${date.month}-${date.day}";
+  }
+
+  // nav handler
+  void _handleNavTap(int index) {
+    switch (index) {
+      case 0:
+        // Navigator.pushReplacement(context,
+        //   MaterialPageRoute(builder: (_) => DashboardPage()));
+        break;
+
+      case 1:
+        // already on calendar
+        break;
+
+      case 2:
+        // Navigator.pushReplacement(context,
+        //   MaterialPageRoute(builder: (_) => ForumsPage()));
+        break;
+
+      case 3:
+        // Navigator.pushReplacement(context,
+        //   MaterialPageRoute(builder: (_) => SettingsPage()));
+        break;
+    }
   }
 
   @override
@@ -43,34 +65,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: AppColors.darkGreen,
-        unselectedItemColor: Colors.grey,
-        items: const [
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            label: "Dashboard",
-          ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: "Calendar",
-          ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.forum_outlined),
-            label: "Forums",
-          ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            label: "Settings",
-          ),
-        ],
-      ),
-
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -78,11 +72,9 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
           child: Column(
             children: [
 
-              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-
                   Text(
                     "FlockSync",
                     style: TextStyle(
@@ -91,7 +83,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                       color: AppColors.darkGreen,
                     ),
                   ),
-
                   const CircleAvatar(),
                 ],
               ),
@@ -109,7 +100,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
 
               const SizedBox(height: 15),
 
-              // Month navigation
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -150,7 +140,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
 
               const SizedBox(height: 10),
 
-              // Weekdays
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: const [
@@ -226,7 +215,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                             const SizedBox(height: 4),
 
                             ...dayEvents.take(2).map((event) {
-
                               return Text(
                                 event["title"] ?? "",
                                 style: const TextStyle(
@@ -235,7 +223,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               );
-
                             }),
                           ],
                         ),
@@ -252,7 +239,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
   }
 
   void _openDayModal(DateTime day) {
-
     TextEditingController titleController = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
     TextEditingController timeController = TextEditingController();
@@ -290,27 +276,21 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
 
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: "Title",
-                ),
+                decoration: const InputDecoration(labelText: "Title"),
               ),
 
               const SizedBox(height: 10),
 
               TextField(
                 controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: "Description",
-                ),
+                decoration: const InputDecoration(labelText: "Description"),
               ),
 
               const SizedBox(height: 10),
 
               TextField(
                 controller: timeController,
-                decoration: const InputDecoration(
-                  labelText: "Time",
-                ),
+                decoration: const InputDecoration(labelText: "Time"),
               ),
 
               const SizedBox(height: 20),
@@ -321,19 +301,15 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                   minimumSize: const Size(double.infinity, 45),
                 ),
                 onPressed: () {
-
                   if (titleController.text.isEmpty) return;
 
                   setState(() {
-
                     events.putIfAbsent(key, () => []);
-
                     events[key]!.add({
                       "title": titleController.text,
                       "description": descriptionController.text,
                       "time": timeController.text,
                     });
-
                   });
 
                   Navigator.pop(context);
@@ -352,14 +328,12 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                   minimumSize: const Size(double.infinity, 45),
                 ),
                 onPressed: () {
-
                   Navigator.pop(context);
 
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          const MaintenancePage(),
+                      builder: (context) => const MaintenancePage(),
                     ),
                   );
                 },

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/calendar.dart';
 import '../widgets/upcoming.dart';
-import '../../../core/theme/flock_theme.dart';
+import 'package:flocksync/core/theme/flock_theme.dart';
 
 class MaintenancePage extends StatelessWidget {
   const MaintenancePage({super.key});
@@ -10,34 +10,6 @@ class MaintenancePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: AppColors.darkGreen,
-        unselectedItemColor: Colors.grey,
-        items: const [
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            label: "Dashboard",
-          ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: "Calendar",
-          ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.forum_outlined),
-            label: "Forums",
-          ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            label: "Settings",
-          ),
-        ],
-      ),
 
       body: SafeArea(
         child: Padding(
@@ -49,7 +21,6 @@ class MaintenancePage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-
                   Text(
                     "FlockSync",
                     style: TextStyle(
@@ -58,9 +29,7 @@ class MaintenancePage extends StatelessWidget {
                       color: AppColors.darkGreen,
                     ),
                   ),
-
-                  const CircleAvatar()
-
+                  const CircleAvatar(),
                 ],
               ),
 
@@ -83,8 +52,7 @@ class MaintenancePage extends StatelessWidget {
 
               const Expanded(
                 child: UpcomingMaintenance(),
-              )
-
+              ),
             ],
           ),
         ),
