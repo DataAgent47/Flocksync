@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/flock_theme.dart';
 import 'firebase_options.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
+import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,7 +50,7 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          _DashboardScreen(
+          dashboardScreen(
             userId: _mockUserId,
             userName: _mockUserName,
             buildingId: _mockBuildingId,
@@ -73,181 +74,173 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-// ─── Dashboard — matches your mockup ──────────────────────────────────────
+// ─── Dashboard ──────────────────────────────────────
 // You can run 'flutter run -d web-server' to debug.
-class _DashboardScreen extends StatelessWidget {
+// flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8081
+// http:<IPv4 Address>:8081
+class dashboardScreen extends StatelessWidget {
   final String userId;
   final String userName;
   final String buildingId;
   final bool isManagement;
 
-  const _DashboardScreen({
+  const dashboardScreen({
+    super.key,
     required this.userId,
     required this.userName,
     required this.buildingId,
     required this.isManagement,
   });
 
-  /**
-   * Contains the containers and elements of the Dashboard:
-   *  - Building Announcements
-   *  - Upcoming Events
-   *  - Calendar
-   *  - Forum Activity
-   */
+  /// Contains the containers and elements of the Dashboard:
+  ///  - Building Announcements
+  ///  - Upcoming Events
+  ///  - Calendar
+  ///  - Forum Activity
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: FlockColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          // Padding for the top left, top, and right.
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-          // Elements are contained within a vertical structure.
-          child: Column(
-            // Aligns 'children' or elements to the beginning of the cross axis, or left.
-            crossAxisAlignment: CrossAxisAlignment.start,
-            // Automatically adds 16px gap between all 'children' or elements.
-            spacing: 16,
-            // Contains 'children' or elements for the Dashboard.
-            children: [
-              // Primary text that writes 'Welcome!'
-              const Text(
-                'Welcome!',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: FlockColors.textPrimary
-                )
+      body: ListView(
+        // Automatically adds 16px gap between all 'children' or elements.
+        padding: const EdgeInsets.all(16),
+        // Contains 'children' or elements for the Dashboard.
+        children: [
+          // Primary text that writes 'Welcome!'
+          const Text(
+            'Welcome!',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: FlockColors.textPrimary
+            )
+          ),
+
+          // Secondary text that introduces users to FlockSync.
+          const Text(
+            'Navigate FlockSync and see building announcements, upcoming events, and more!',
+            style: TextStyle(
+              fontSize: 16,
+              color: FlockColors.textSecondary,
+            )
+          ),
+
+          // Announces new dashboard content
+          const AnnouncementCard(
+            title: 'Important Update',
+            message: 'Check out the new features!',
+            icon: Icons.campaign,
+          ),
+
+          const SizedBox(height: 20),
+
+          // Events
+          titleSection('Upcoming Events'),
+          const SizedBox(height: 10),
+
+          ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(
+              dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+              },
+            ),
+            child: SizedBox(
+              height: 180,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: 10,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (_, index) => eventCard(),
               ),
+            ),
+          ),
 
-              // Secondary text that introduces users to FlockSync.
-              const Text(
-                'Navigate FlockSync and see building announcements, upcoming events, and more!',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: FlockColors.textSecondary,
-                )
-              ),
+          const SizedBox(height: 20),
 
-              // Announces new dashboard content
-              const AnnouncementCard(
-                title: 'Important Update',
-                message: 'Check out the new features!',
-                icon: Icons.campaign,
-              ),
+          // Calendar
+          titleSection('Calendar'),
+          const SizedBox(height: 10),
+          cardContainer(
+            height: 250,
+            child: _PlaceholderScreen(label: 'Calendar'),
+          ),
 
-              // Primary text above building announcements.
-              const Text(
-                'Building Forum',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: FlockColors.textPrimary
-                )
-              ),
+          const SizedBox(height: 20),
 
-              // Building Announcements.
-              Container(
-                height: 300,
-                decoration: BoxDecoration(
-                  border: Border.all(color: FlockColors.darkGreen),
-                ),
+          // Forum
+          titleSection('Forum Activity'),
+          const SizedBox(height: 10),
+          cardContainer(
+            height: 520,
+            child: ForumFeedScreen(
+              buildingId: buildingId,
+              currentUserId: userId,
+              currentUserName: userName,
+              isManagement: isManagement,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                // Building Announcements.
-                child: ForumFeedScreen(
-                  buildingId: buildingId,
-                  currentUserId: userId,
-                  currentUserName: userName,
-                  isManagement: isManagement
-                )
-              ),
-
-              // Elements are contained within a horizontal structure.
-              Row(
-                // Aligns 'children' or elements to the beginning of the cross axis, or top.
-                crossAxisAlignment: CrossAxisAlignment.start,
-                // Contains 'children' or elements for the Dashboard.
-                children: [
-                  // --- LEFT COLUMN ---
-                  Expanded(
-                    child: Column(
-                      spacing: 16,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-
-                      children: [
-                        const Text(
-                          'Upcoming Events',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: FlockColors.textPrimary
-                          )
-                        ),
-                        
-                        // Upcoming Events
-                        Container(
-                          height: 666,
-                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
-                          // Upcoming Events
-                          child: _PlaceholderScreen(label: 'Upcoming Events'),
-                        )
-                      ]
-                    )
-                  ),
-                  
-                  // Space between the left and right sides.
-                  const SizedBox(width: 24),
-
-                  // --- RIGHT COLUMN ---
-                  Expanded(
-                    child: Column(
-                      spacing: 16,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Calendar',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: FlockColors.textPrimary
-                          )
-                        ),
-                        
-                        // Calendar Activity
-                        Container(
-                          height: 300,
-                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
-                          // Calendar
-                          child: _PlaceholderScreen(label: 'Calendar')
-                        ),
-                        
-                        const Text(
-                          'Building Announcements',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: FlockColors.textPrimary
-                          )
-                        ),
-                        
-                        // Forum Feed Activity
-                        Container(
-                          height: 300,
-                          decoration: BoxDecoration(border: Border.all(color: FlockColors.textPrimary)),
-
-                          // Building Announcements
-                          child: _PlaceholderScreen(label: 'Building Announcements')
-                        )
-                      ]
-                    )
-                  )
-                ]
-              )
-            ]
+  // Reusable card container
+  Widget cardContainer({required double height, required Widget child}) {
+    return Container(
+      height: height,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: FlockColors.cream,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 8,
+            color: Colors.black
           )
-        )
-      )
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  // Title Section
+  Widget titleSection(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  // Event card
+  Widget eventCard() {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: FlockColors.darkGreen,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.event, color: FlockColors.cream),
+          SizedBox(height: 10),
+          Text(
+            'Event Title',
+            style: TextStyle(color: FlockColors.cream, fontWeight: FontWeight.bold),
+          ),
+          Spacer(),
+          Text(
+            'Apr 25',
+            style: TextStyle(color: FlockColors.cream),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -258,11 +251,11 @@ class AnnouncementCard extends StatelessWidget {
   final IconData icon;
 
   const AnnouncementCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.message,
     required this.icon,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
