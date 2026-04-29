@@ -12,6 +12,7 @@ import '../widgets/image_grid.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
+  final ForumType forumType;
   final String currentUserId;
   final String currentUserName;
   final String currentUserAvatarUrl;
@@ -20,6 +21,7 @@ class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({
     super.key,
     required this.postId,
+    this.forumType = ForumType.building,
     required this.currentUserId,
     required this.currentUserName,
     this.currentUserAvatarUrl = '',
@@ -89,10 +91,24 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       backgroundColor: FlockColors.cream,
       appBar: AppBar(
         backgroundColor: FlockColors.cream,
-        title: const Text('Discussion',
-            style: TextStyle(
-                color: FlockColors.darkGreen, fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Discussion',
+          style: TextStyle(
+            color: FlockColors.darkGreen,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         iconTheme: const IconThemeData(color: FlockColors.darkGreen),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: _ForumTypeBadge(
+              label: widget.forumType == ForumType.neighborhood
+                  ? 'Neighborhood'
+                  : 'Building',
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -102,15 +118,19 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               builder: (context, postSnap) {
                 if (postSnap.connectionState == ConnectionState.waiting) {
                   return const Center(
-                      child: CircularProgressIndicator(
-                          color: FlockColors.midGreen));
+                    child: CircularProgressIndicator(
+                      color: FlockColors.midGreen,
+                    ),
+                  );
                 }
                 final post = postSnap.data;
                 if (post == null) {
                   return const Center(
-                      child: Text('Post not found.',
-                          style:
-                              TextStyle(color: FlockColors.textSecondary)));
+                    child: Text(
+                      'Post not found.',
+                      style: TextStyle(color: FlockColors.textSecondary),
+                    ),
+                  );
                 }
 
                 return StreamBuilder<List<ForumReply>>(
@@ -127,19 +147,24 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           currentUserId: widget.currentUserId,
                           isManagement: widget.isManagement,
                           onUpvote: () => controller.togglePostUpvote(
-                              post.id, widget.currentUserId),
+                            post.id,
+                            widget.currentUserId,
+                          ),
                           onPin: widget.isManagement
                               ? () => controller.togglePin(
-                                  post.id, !post.isPinned)
+                                  post.id,
+                                  !post.isPinned,
+                                )
                               : null,
                         ),
                         const SizedBox(height: 24),
                         Text(
                           '${post.replyCount} ${post.replyCount == 1 ? "Reply" : "Replies"}',
                           style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: FlockColors.darkGreen),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: FlockColors.darkGreen,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         if (replySnap.connectionState ==
@@ -147,32 +172,44 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                           const Padding(
                             padding: EdgeInsets.all(24),
                             child: Center(
-                                child: CircularProgressIndicator(
-                                    color: FlockColors.midGreen)),
+                              child: CircularProgressIndicator(
+                                color: FlockColors.midGreen,
+                              ),
+                            ),
                           )
                         else if (replies.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 24),
-                            child: Text('No replies yet. Be the first!',
-                                style: TextStyle(
-                                    color: FlockColors.textSecondary,
-                                    fontSize: 14)),
+                            child: Text(
+                              'No replies yet. Be the first!',
+                              style: TextStyle(
+                                color: FlockColors.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
                           )
                         else
-                          ...replies.map((reply) => ReplyCard(
-                                reply: reply,
-                                currentUserId: widget.currentUserId,
-                                isManagement: widget.isManagement,
-                                onUpvote: () => controller.toggleReplyUpvote(
-                                    widget.postId,
-                                    reply.id,
-                                    widget.currentUserId),
-                                onDelete: widget.isManagement ||
-                                        reply.authorId == widget.currentUserId
-                                    ? () => _confirmDeleteReply(
-                                        context, controller, reply.id)
-                                    : null,
-                              )),
+                          ...replies.map(
+                            (reply) => ReplyCard(
+                              reply: reply,
+                              currentUserId: widget.currentUserId,
+                              isManagement: widget.isManagement,
+                              onUpvote: () => controller.toggleReplyUpvote(
+                                widget.postId,
+                                reply.id,
+                                widget.currentUserId,
+                              ),
+                              onDelete:
+                                  widget.isManagement ||
+                                      reply.authorId == widget.currentUserId
+                                  ? () => _confirmDeleteReply(
+                                      context,
+                                      controller,
+                                      reply.id,
+                                    )
+                                  : null,
+                            ),
+                          ),
                         const SizedBox(height: 16),
                       ],
                     );
@@ -197,34 +234,71 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 
   void _confirmDeleteReply(
-      BuildContext context, ForumController controller, String replyId) {
+    BuildContext context,
+    ForumController controller,
+    String replyId,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: FlockColors.cream,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Reply',
-            style: TextStyle(color: FlockColors.darkGreen)),
-        content: const Text('Delete this reply permanently?',
-            style: TextStyle(color: FlockColors.textSecondary)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Delete Reply',
+          style: TextStyle(color: FlockColors.darkGreen),
+        ),
+        content: const Text(
+          'Delete this reply permanently?',
+          style: TextStyle(color: FlockColors.textSecondary),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel',
-                  style: TextStyle(color: FlockColors.midGreen))),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlockColors.midGreen),
+            ),
+          ),
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await controller.deleteReply(widget.postId, replyId);
             },
             style: FilledButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10))),
+              backgroundColor: Colors.red.shade700,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             child: const Text('Delete'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ForumTypeBadge extends StatelessWidget {
+  final String label;
+  const _ForumTypeBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: FlockColors.cardBackground,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: FlockColors.tan),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: FlockColors.darkGreen,
+        ),
       ),
     );
   }
@@ -262,58 +336,79 @@ class _PostBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Author + category
-          Row(children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: FlockColors.midGreen,
-              backgroundImage: post.authorAvatarUrl.isNotEmpty
-                  ? NetworkImage(post.authorAvatarUrl)
-                  : null,
-              child: post.authorAvatarUrl.isEmpty
-                  ? Text(post.authorName[0].toUpperCase(),
-                      style: const TextStyle(
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: FlockColors.midGreen,
+                backgroundImage: post.authorAvatarUrl.isNotEmpty
+                    ? NetworkImage(post.authorAvatarUrl)
+                    : null,
+                child: post.authorAvatarUrl.isEmpty
+                    ? Text(
+                        post.authorName[0].toUpperCase(),
+                        style: const TextStyle(
                           color: FlockColors.cream,
-                          fontWeight: FontWeight.w600))
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(post.authorName,
-                      style: const TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: FlockColors.darkGreen)),
-                  Text(_formatDate(post.createdAt),
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post.authorName,
                       style: const TextStyle(
-                          fontSize: 12, color: FlockColors.textMuted)),
-                ],
+                        fontWeight: FontWeight.w600,
+                        color: FlockColors.darkGreen,
+                      ),
+                    ),
+                    Text(
+                      _formatDate(post.createdAt),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: FlockColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            if (post.isPinned)
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Icon(Icons.push_pin,
-                    size: 15, color: FlockColors.midGreen),
-              ),
-            CategoryChip(category: post.category, compact: true),
-          ]),
+              if (post.isPinned)
+                const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: Icon(
+                    Icons.push_pin,
+                    size: 15,
+                    color: FlockColors.midGreen,
+                  ),
+                ),
+              CategoryChip(category: post.category, compact: true),
+            ],
+          ),
 
           const SizedBox(height: 14),
 
-          Text(post.title,
-              style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: FlockColors.darkGreen,
-                  height: 1.3)),
+          Text(
+            post.title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: FlockColors.darkGreen,
+              height: 1.3,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(post.body,
-              style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.5,
-                  color: FlockColors.textPrimary)),
+          Text(
+            post.body,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.5,
+              color: FlockColors.textPrimary,
+            ),
+          ),
 
           if (post.imageUrls.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -325,23 +420,27 @@ class _PostBody extends StatelessWidget {
           const SizedBox(height: 8),
 
           // Actions
-          Row(children: [
-            _ActionBtn(
-              icon: isUpvoted ? Icons.thumb_up : Icons.thumb_up_outlined,
-              label: '${post.upvoteCount}',
-              active: isUpvoted,
-              onTap: onUpvote,
-            ),
-            if (onPin != null) ...[
-              const SizedBox(width: 16),
+          Row(
+            children: [
               _ActionBtn(
-                icon: post.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-                label: post.isPinned ? 'Unpin' : 'Pin',
-                active: post.isPinned,
-                onTap: onPin!,
+                icon: isUpvoted ? Icons.thumb_up : Icons.thumb_up_outlined,
+                label: '${post.upvoteCount}',
+                active: isUpvoted,
+                onTap: onUpvote,
               ),
+              if (onPin != null) ...[
+                const SizedBox(width: 16),
+                _ActionBtn(
+                  icon: post.isPinned
+                      ? Icons.push_pin
+                      : Icons.push_pin_outlined,
+                  label: post.isPinned ? 'Unpin' : 'Pin',
+                  active: post.isPinned,
+                  onTap: onPin!,
+                ),
+              ],
             ],
-          ]),
+          ),
         ],
       ),
     );
@@ -379,13 +478,20 @@ class _ActionBtn extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(children: [
-          Icon(icon, size: 17, color: color),
-          const SizedBox(width: 5),
-          Text(label,
+        child: Row(
+          children: [
+            Icon(icon, size: 17, color: color),
+            const SizedBox(width: 5),
+            Text(
+              label,
               style: TextStyle(
-                  color: color, fontSize: 13, fontWeight: FontWeight.w500)),
-        ]),
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -418,7 +524,11 @@ class _ReplyComposer extends StatelessWidget {
         border: Border(top: BorderSide(color: FlockColors.divider)),
       ),
       padding: EdgeInsets.fromLTRB(
-          12, 10, 12, 10 + MediaQuery.of(context).padding.bottom),
+        12,
+        10,
+        12,
+        10 + MediaQuery.of(context).padding.bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -428,34 +538,41 @@ class _ReplyComposer extends StatelessWidget {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: selectedImages.length,
-                itemBuilder: (context, i) => Stack(children: [
-                  Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      image: DecorationImage(
+                itemBuilder: (context, i) => Stack(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
                           image: FileImage(selectedImages[i]),
-                          fit: BoxFit.cover),
-                    ),
-                  ),
-                  Positioned(
-                    top: 2,
-                    right: 10,
-                    child: GestureDetector(
-                      onTap: () => onRemoveImage(i),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle),
-                        child: const Icon(Icons.close,
-                            size: 13, color: Colors.white),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                    Positioned(
+                      top: 2,
+                      right: 10,
+                      child: GestureDetector(
+                        onTap: () => onRemoveImage(i),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -487,7 +604,9 @@ class _ReplyComposer extends StatelessWidget {
                     filled: true,
                     fillColor: FlockColors.cardBackground,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ),
@@ -496,20 +615,26 @@ class _ReplyComposer extends StatelessWidget {
                   ? const Padding(
                       padding: EdgeInsets.all(12),
                       child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: FlockColors.darkGreen)),
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: FlockColors.darkGreen,
+                        ),
+                      ),
                     )
                   : Container(
                       decoration: const BoxDecoration(
-                          color: FlockColors.darkGreen,
-                          shape: BoxShape.circle),
+                        color: FlockColors.darkGreen,
+                        shape: BoxShape.circle,
+                      ),
                       child: IconButton(
                         onPressed: onSubmit,
-                        icon: const Icon(Icons.send,
-                            color: FlockColors.cream, size: 18),
+                        icon: const Icon(
+                          Icons.send,
+                          color: FlockColors.cream,
+                          size: 18,
+                        ),
                         tooltip: 'Send reply',
                       ),
                     ),

@@ -7,3 +7,11 @@
 [Backend setup](https://github.com/DataAgent47/Flocksync/blob/main/flocksync-backend/README.md)
 
 [Frontend setup](https://github.com/DataAgent47/Flocksync/blob/main/frontend/README.md)
+
+##Local testing checklist
+*Start backend:
+cd flocksync-backend && npm run dev
+*Start frontend:
+cd frontend && flutter run
+*Optional explicit override (recommended):
+flutter run --dart-define=BACKEND_API_URL=http://localhost:5050

@@ -9,6 +9,9 @@ import '../widgets/category_chip.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final String buildingId;
+  final ForumType forumType;
+  final String forumKey;
+  final List<PostCategory> categories;
   final String currentUserId;
   final String currentUserName;
   final String currentUserAvatarUrl;
@@ -16,10 +19,13 @@ class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({
     super.key,
     required this.buildingId,
+    this.forumType = ForumType.building,
+    String? forumKey,
+    this.categories = PostCategory.values,
     required this.currentUserId,
     required this.currentUserName,
     this.currentUserAvatarUrl = '',
-  });
+  }) : forumKey = forumKey ?? buildingId;
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -31,9 +37,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _bodyController = TextEditingController();
   final _imagePicker = ImagePicker();
 
-  PostCategory _selectedCategory = PostCategory.general;
+  late PostCategory _selectedCategory;
   final List<File> _selectedImages = [];
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCategory = widget.categories.first;
+  }
 
   @override
   void dispose() {
@@ -96,9 +108,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       backgroundColor: FlockColors.cream,
       appBar: AppBar(
         backgroundColor: FlockColors.cream,
-        title: const Text('New Post',
-            style: TextStyle(
-                color: FlockColors.darkGreen, fontWeight: FontWeight.w700)),
+        title: const Text(
+          'New Post',
+          style: TextStyle(
+            color: FlockColors.darkGreen,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         iconTheme: const IconThemeData(color: FlockColors.darkGreen),
         actions: [
           Padding(
@@ -106,21 +122,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: _isSubmitting
                 ? const Center(
                     child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: FlockColors.darkGreen)))
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: FlockColors.darkGreen,
+                      ),
+                    ),
+                  )
                 : FilledButton(
                     onPressed: _isSubmitting ? null : _submit,
                     style: FilledButton.styleFrom(
                       backgroundColor: FlockColors.darkGreen,
                       foregroundColor: FlockColors.cream,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    child: const Text('Post',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    child: const Text(
+                      'Post',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ),
           ),
         ],
@@ -131,23 +153,28 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           padding: const EdgeInsets.all(20),
           children: [
             // ── Category ────────────────────────────────────────────────
-            const Text('Category',
-                style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: FlockColors.darkGreen,
-                    fontSize: 13)),
+            const Text(
+              'Category',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: FlockColors.darkGreen,
+                fontSize: 13,
+              ),
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: PostCategory.values.map((cat) {
+              children: widget.categories.map((cat) {
                 final selected = cat == _selectedCategory;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedCategory = cat),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: selected
                           ? FlockColors.darkGreen
@@ -163,16 +190,28 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Use the chip but override colors via selected state
-                        if (!selected) CategoryChip(category: cat, compact: true)
-                        else Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(_catIcon(cat), size: 13, color: FlockColors.cream),
-                          const SizedBox(width: 4),
-                          Text(_catLabel(cat),
-                              style: const TextStyle(
+                        if (!selected)
+                          CategoryChip(category: cat, compact: true)
+                        else
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _catIcon(cat),
+                                size: 13,
+                                color: FlockColors.cream,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _catLabel(cat),
+                                style: const TextStyle(
                                   fontSize: 12,
                                   color: FlockColors.cream,
-                                  fontWeight: FontWeight.w600)),
-                        ]),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -190,28 +229,29 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               decoration: InputDecoration(
                 labelText: 'Title',
                 hintText: "What's this about?",
-                labelStyle:
-                    const TextStyle(color: FlockColors.midGreen),
+                labelStyle: const TextStyle(color: FlockColors.midGreen),
                 hintStyle: const TextStyle(color: FlockColors.textMuted),
                 filled: true,
                 fillColor: FlockColors.cardBackground,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: FlockColors.tan)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: FlockColors.tan),
+                ),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: FlockColors.tan)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: FlockColors.tan),
+                ),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: FlockColors.darkGreen, width: 1.5)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: FlockColors.darkGreen,
+                    width: 1.5,
+                  ),
+                ),
               ),
               maxLength: 120,
-              validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Please add a title'
-                  : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Please add a title' : null,
             ),
 
             const SizedBox(height: 16),
@@ -227,23 +267,25 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 labelText: 'Details',
                 hintText: 'Add more context, questions, or information…',
                 alignLabelWithHint: true,
-                labelStyle:
-                    const TextStyle(color: FlockColors.midGreen),
+                labelStyle: const TextStyle(color: FlockColors.midGreen),
                 hintStyle: const TextStyle(color: FlockColors.textMuted),
                 filled: true,
                 fillColor: FlockColors.cardBackground,
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: FlockColors.tan)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: FlockColors.tan),
+                ),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: FlockColors.tan)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: FlockColors.tan),
+                ),
                 focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: FlockColors.darkGreen, width: 1.5)),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: FlockColors.darkGreen,
+                    width: 1.5,
+                  ),
+                ),
               ),
               validator: (v) => (v == null || v.trim().isEmpty)
                   ? 'Please add some details'
@@ -253,17 +295,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             const SizedBox(height: 24),
 
             // ── Photos ──────────────────────────────────────────────────
-            Row(children: [
-              const Text('Photos',
+            Row(
+              children: [
+                const Text(
+                  'Photos',
                   style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: FlockColors.darkGreen,
-                      fontSize: 13)),
-              const SizedBox(width: 6),
-              const Text('optional',
-                  style: TextStyle(
-                      fontSize: 11, color: FlockColors.textMuted)),
-            ]),
+                    fontWeight: FontWeight.w600,
+                    color: FlockColors.darkGreen,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  'optional',
+                  style: TextStyle(fontSize: 11, color: FlockColors.textMuted),
+                ),
+              ],
+            ),
             const SizedBox(height: 10),
 
             SizedBox(
@@ -277,8 +325,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   }
                   return _PhotoPreviewTile(
                     file: _selectedImages[i],
-                    onRemove: () =>
-                        setState(() => _selectedImages.removeAt(i)),
+                    onRemove: () => setState(() => _selectedImages.removeAt(i)),
                   );
                 },
               ),
@@ -334,14 +381,20 @@ class _AddPhotoTile extends StatelessWidget {
           child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_photo_alternate_outlined,
-                  color: FlockColors.midGreen, size: 26),
+              Icon(
+                Icons.add_photo_alternate_outlined,
+                color: FlockColors.midGreen,
+                size: 26,
+              ),
               SizedBox(height: 4),
-              Text('Add photo',
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: FlockColors.midGreen,
-                      fontWeight: FontWeight.w500)),
+              Text(
+                'Add photo',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: FlockColors.midGreen,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),
@@ -359,25 +412,29 @@ class _PhotoPreviewTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: Stack(children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.file(file, width: 100, height: 100, fit: BoxFit.cover),
-        ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: GestureDetector(
-            onTap: onRemove,
-            child: Container(
-              padding: const EdgeInsets.all(3),
-              decoration: const BoxDecoration(
-                  color: Colors.black54, shape: BoxShape.circle),
-              child: const Icon(Icons.close, size: 13, color: Colors.white),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(file, width: 100, height: 100, fit: BoxFit.cover),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, size: 13, color: Colors.white),
+              ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }

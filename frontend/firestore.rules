@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function hasUserDoc() {
+      return isSignedIn() && exists(userPath());
+    }
+
+    function requestedPropertyId() {
+      return hasUserDoc() &&
+        ('onboarding_state' in get(userPath()).data) &&
+        (get(userPath()).data.onboarding_state is map) &&
+        ('property_id' in get(userPath()).data.onboarding_state) &&
+        (get(userPath()).data.onboarding_state.property_id is string)
+          ? get(userPath()).data.onboarding_state.property_id
+          : '';
+    }
+
+    function hasBuildingRequest() {
+      return requestedPropertyId().size() > 0;
+    }
+
+    function requestedPropertyZipCode() {
+      return hasBuildingRequest() &&
+        exists(/databases/$(database)/documents/properties/$(requestedPropertyId())) &&
+        ('postal_code' in get(/databases/$(database)/documents/properties/$(requestedPropertyId())).data) &&
+        (get(/databases/$(database)/documents/properties/$(requestedPropertyId())).data.postal_code is string)
+          ? get(/databases/$(database)/documents/properties/$(requestedPropertyId())).data.postal_code
+          : '';
+    }
+
+    function isVerifiedResident(propertyId) {
+      return exists(/databases/$(database)/documents/residents/$(propertyId + "_" + request.auth.uid)) &&
+        get(/databases/$(database)/documents/residents/$(propertyId + "_" + request.auth.uid)).data.is_verified == true;
+    }
+
+    function isVerifiedManager(propertyId) {
+      return exists(/databases/$(database)/documents/managers/$(propertyId + "_" + request.auth.uid)) &&
+        get(/databases/$(database)/documents/managers/$(propertyId + "_" + request.auth.uid)).data.is_verified == true;
+    }
+
+    function isVerifiedForProperty(propertyId) {
+      return isSignedIn() && (isVerifiedResident(propertyId) || isVerifiedManager(propertyId));
+    }
+
+    function canAccessPost(post) {
+      return (
+        post.forumType == 'building' &&
+        isVerifiedForProperty(post.buildingId)
+      ) || (
+        post.forumType == 'neighborhood' &&
+        hasBuildingRequest() &&
+        (
+          // Primary guard: user requested the same building.
+          (post.buildingId is string && post.buildingId == requestedPropertyId()) ||
+          // Fallback guard: matching zip code.
+          (post.zipCode is string && post.zipCode == requestedPropertyZipCode())
+        )
+      );
+    }
+
+    // ── Core onboarding/user data permissions ───────────────────────────────
+    // These are required so onboarding completion and profile persistence work.
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create, update: if isSignedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    match /properties/{propertyId} {
+      // Needed to hydrate onboarding/building context and zip code.
+      allow read: if isSignedIn();
+      // Existing onboarding flow creates/updates properties from client.
+      allow create, update: if isSignedIn();
+      allow delete: if false;
+    }
+
+    match /residents/{residentDocId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.resource.data.resident_id == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /managers/{managerDocId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.resource.data.manager_id == request.auth.uid;
+      allow delete: if false;
+    }
+
+    match /forum_posts/{postId} {
+      allow read: if isSignedIn() && canAccessPost(resource.data);
+
+      allow create: if isSignedIn() &&
+        request.resource.data.authorId == request.auth.uid &&
+        request.resource.data.authorUid == request.auth.uid &&
+        request.resource.data.title is string &&
+        request.resource.data.body is string &&
+        request.resource.data.category is string &&
+        canAccessPost(request.resource.data);
+
+      allow update: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid ||
+        isVerifiedManager(resource.data.buildingId)
+      );
+
+      allow delete: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid ||
+        isVerifiedManager(resource.data.buildingId)
+      );
+
+      match /replies/{replyId} {
+        allow read: if isSignedIn() &&
+          canAccessPost(get(/databases/$(database)/documents/forum_posts/$(postId)).data);
+
+        allow create: if isSignedIn() &&
+          request.resource.data.authorId == request.auth.uid &&
+          canAccessPost(get(/databases/$(database)/documents/forum_posts/$(postId)).data);
+
+        allow update: if isSignedIn() &&
+          resource.data.authorId == request.auth.uid;
+
+        allow delete: if isSignedIn() && (
+          resource.data.authorId == request.auth.uid ||
+          isVerifiedManager(get(/databases/$(database)/documents/forum_posts/$(postId)).data.buildingId)
+        );
+      }
+    }
+  }
+}

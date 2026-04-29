@@ -5,11 +5,13 @@ import '../../../core/theme/flock_theme.dart';
 class CategoryFilterBar extends StatelessWidget {
   final PostCategory? selected;
   final void Function(PostCategory?) onSelected;
+  final List<PostCategory> categories;
 
   const CategoryFilterBar({
     super.key,
     required this.selected,
     required this.onSelected,
+    this.categories = PostCategory.values,
   });
 
   @override
@@ -123,6 +125,7 @@ class CategoryFilterBar extends StatelessWidget {
       ),
       builder: (ctx) => _CategorySheet(
         selected: selected,
+        categories: categories,
         onSelected: (cat) {
           Navigator.pop(ctx);
           onSelected(cat);
@@ -147,8 +150,13 @@ class CategoryFilterBar extends StatelessWidget {
 class _CategorySheet extends StatelessWidget {
   final PostCategory? selected;
   final void Function(PostCategory?) onSelected;
+  final List<PostCategory> categories;
 
-  const _CategorySheet({required this.selected, required this.onSelected});
+  const _CategorySheet({
+    required this.selected,
+    required this.onSelected,
+    required this.categories,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -182,14 +190,20 @@ class _CategorySheet extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Category tiles
-          ..._categoryItems.map(
-            (item) => _CategoryTile(
-              icon: item.icon,
-              label: item.label,
-              isSelected: selected == item.category,
-              onTap: () => onSelected(item.category),
-            ),
-          ),
+          ...categories
+              .map(
+                (category) => _categoryItems.firstWhere(
+                  (item) => item.category == category,
+                ),
+              )
+              .map(
+                (item) => _CategoryTile(
+                  icon: item.icon,
+                  label: item.label,
+                  isSelected: selected == item.category,
+                  onTap: () => onSelected(item.category),
+                ),
+              ),
 
           const SizedBox(height: 8),
 
@@ -203,7 +217,8 @@ class _CategorySheet extends StatelessWidget {
                   foregroundColor: FlockColors.darkGreen,
                   side: const BorderSide(color: FlockColors.tan),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: const Text(
@@ -240,7 +255,9 @@ class _CategoryTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? FlockColors.darkGreen : FlockColors.cardBackground,
+          color: isSelected
+              ? FlockColors.darkGreen
+              : FlockColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? FlockColors.darkGreen : FlockColors.tan,
@@ -278,8 +295,11 @@ class _CategoryItem {
   final PostCategory category;
   final String label;
   final IconData icon;
-  const _CategoryItem(
-      {required this.category, required this.label, required this.icon});
+  const _CategoryItem({
+    required this.category,
+    required this.label,
+    required this.icon,
+  });
 }
 
 const _categoryItems = [
@@ -310,15 +330,13 @@ const _categoryItems = [
   ),
 ];
 
-
 // ─── Single category chip (used on post cards and detail screen) ───────────────
 
 class CategoryChip extends StatelessWidget {
   final PostCategory category;
   final bool compact;
 
-  const CategoryChip(
-      {super.key, required this.category, this.compact = false});
+  const CategoryChip({super.key, required this.category, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +344,9 @@ class CategoryChip extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: compact ? 8 : 10, vertical: compact ? 3 : 5),
+        horizontal: compact ? 8 : 10,
+        vertical: compact ? 3 : 5,
+      ),
       decoration: BoxDecoration(
         color: meta.bg,
         borderRadius: BorderRadius.circular(20),
