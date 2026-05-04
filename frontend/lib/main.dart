@@ -15,6 +15,12 @@ import 'features/settings/screens/settings_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // ── Local emulator (dev only) ──────────────────────────────────────────
+  const bool kUseEmulator = bool.fromEnvironment('USE_EMULATOR');
+  if (kUseEmulator) {
+    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+  }
+  // ───────────────────────────────────────────────────────────────────────
   runApp(const FlockSyncApp());
 }
 
