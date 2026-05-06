@@ -196,15 +196,38 @@ class _DashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         // Contains 'children' or elements for the Dashboard.
         children: [
-          // Primary text that writes 'Welcome!'
-          const Text(
-            'Welcome!',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: FlockColors.textPrimary
-            )
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Primary text that writes 'Welcome!'
+              const Text(
+                'Welcome!',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: FlockColors.textPrimary
+                )
+              ),
+
+              GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingsScreen(
+                      user: user,
+                      showBackButton: true,
+                    ),
+                  )
+                );
+              },
+              child: profileImage(),
+              )
+            ]
           ),
+
+          const SizedBox(height: 20),
 
           // Secondary text that introduces users to FlockSync.
           const Text(
@@ -215,6 +238,8 @@ class _DashboardScreen extends StatelessWidget {
             )
           ),
 
+          const SizedBox(height: 20),
+
           // Announces new dashboard content
           const AnnouncementCard(
             title: 'Important Update',
@@ -224,37 +249,12 @@ class _DashboardScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Events
-          titleSection('Upcoming Events'),
-          const SizedBox(height: 10),
-
-          ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(
-              dragDevices: {
-                PointerDeviceKind.touch,
-                PointerDeviceKind.mouse,
-              },
-            ),
-            child: SizedBox(
-              height: 180,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: 10,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemBuilder: (_, index) => eventCard(),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
           // Calendar
           titleSection('Calendar'),
           const SizedBox(height: 10),
           cardContainer(
-            height: 250,
-            child: _PlaceholderScreen(label: 'Calendar'),
+            height: 520,
+            child: PersonalCalendarPage(),
           ),
 
           const SizedBox(height: 20),
@@ -287,7 +287,7 @@ class _DashboardScreen extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             blurRadius: 8,
-            color: Colors.black
+            color: FlockColors.darkGreen
           )
         ],
       ),
@@ -302,34 +302,6 @@ class _DashboardScreen extends StatelessWidget {
       style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  // Event card
-  Widget eventCard() {
-    return Container(
-      width: 140,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: FlockColors.darkGreen,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.event, color: FlockColors.cream),
-          SizedBox(height: 10),
-          Text(
-            'Event Title',
-            style: TextStyle(color: FlockColors.cream, fontWeight: FontWeight.bold),
-          ),
-          Spacer(),
-          Text(
-            'Apr 25',
-            style: TextStyle(color: FlockColors.cream),
-          ),
-        ],
       ),
     );
   }
@@ -359,6 +331,56 @@ class AnnouncementCard extends StatelessWidget {
           )
         ),
         subtitle: Text(message)
+      ),
+    );
+  }
+}
+
+@override
+Widget profileImage() {
+  return _HoverProfileImage();
+}
+
+class _HoverProfileImage extends StatefulWidget {
+  @override
+  State<_HoverProfileImage> createState() => _HoverProfileImageState();
+}
+
+class _HoverProfileImageState extends State<_HoverProfileImage> {
+  bool isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => isHovered = true),
+      onExit: (_) => setState(() => isHovered = false),
+
+      child: Transform.scale(
+        scale: isHovered ? 1.08 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: FlockColors.darkGreen,
+          ),
+          child: CircleAvatar(
+            radius: 30,
+            backgroundColor: FlockColors.tan,
+            backgroundImage:
+                (FirebaseAuth.instance.currentUser?.photoURL?.isNotEmpty ?? false)
+                    ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
+                    : null,
+            child: (FirebaseAuth.instance.currentUser?.photoURL?.isEmpty ?? true)
+                ? const Icon(
+                    Icons.person,
+                    size: 30,
+                    color: FlockColors.darkGreen,
+                  )
+                : null,
+          ),
+        ),
       ),
     );
   }

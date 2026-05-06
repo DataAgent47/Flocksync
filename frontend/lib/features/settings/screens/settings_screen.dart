@@ -11,8 +11,9 @@ import 'security_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final User user;
+  final bool showBackButton;
 
-  const SettingsScreen({super.key, required this.user});
+  const SettingsScreen({super.key, required this.user, this.showBackButton = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -53,11 +54,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       animation: _controller,
       builder: (context, _) {
         return Scaffold(
+          appBar: widget.showBackButton ? AppBar(
+            title: Text('Return to dashboard')
+          ): null,
           backgroundColor: FlockColors.cream,
           body: SafeArea(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
               children: [
+                
                 const Text(
                   'Settings',
                   style: TextStyle(
