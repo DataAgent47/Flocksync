@@ -27,14 +27,30 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
   bool _expanded = false;
   bool _loading = false;
   bool? _viewVerified;
+  String? _viewFirstName;
+  String? _viewLastName;
+  String? _viewApartment;
 
   // Effective verification status so that the UI updates when we verify a user
   bool get _effectiveIsVerified => _viewVerified ?? widget.user.isVerified;
+  String get _effectiveFirstName => _viewFirstName ?? widget.user.firstName;
+  String get _effectiveLastName => _viewLastName ?? widget.user.lastName;
+  String get _effectiveApartment => _viewApartment ?? widget.user.apartmentNumber;
+  String get _effectiveFullName =>
+      '$_effectiveFirstName $_effectiveLastName'.trim();
+
   @override
   void didUpdateWidget(covariant UserRow oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.user.isVerified != widget.user.isVerified) {
       _viewVerified = null;
+    }
+    if (oldWidget.user.firstName != widget.user.firstName ||
+        oldWidget.user.lastName != widget.user.lastName ||
+        oldWidget.user.apartmentNumber != widget.user.apartmentNumber) {
+      _viewFirstName = null;
+      _viewLastName = null;
+      _viewApartment = null;
     }
   }
 
@@ -76,7 +92,154 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
   }
 
   void _onEdit() {
-    // TODO: wire up edit flow
+    final formKey = GlobalKey<FormState>();
+    final firstNameController = TextEditingController(text: _effectiveFirstName);
+    final lastNameController = TextEditingController(text: _effectiveLastName);
+    final apartmentController = TextEditingController(text: _effectiveApartment);
+
+    showDialog<_EditUserResult>(
+      context: context,
+      builder: (dialogContext) {
+        var isSaving = false;
+        String? errorText;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> save() async {
+              if (!formKey.currentState!.validate()) {
+                return;
+              }
+
+              setDialogState(() {
+                isSaving = true;
+                errorText = null;
+              });
+
+              try {
+                await widget.service.updateUserDetails(
+                  userId: widget.user.userId,
+                  firstName: firstNameController.text,
+                  lastName: lastNameController.text,
+                  apartmentNumber: apartmentController.text,
+                );
+
+                if (!dialogContext.mounted) {
+                  return;
+                }
+
+                Navigator.of(dialogContext).pop(
+                  _EditUserResult(
+                    firstName: firstNameController.text.trim(),
+                    lastName: lastNameController.text.trim(),
+                    apartment: apartmentController.text.trim(),
+                  ),
+                );
+              } catch (e) {
+                setDialogState(() {
+                  isSaving = false;
+                  errorText = e.toString().replaceFirst('Exception: ', '');
+                });
+              }
+            }
+
+            return AlertDialog(
+              title: const Text('Edit User Details'),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (errorText != null) ...[
+                        Text(
+                          errorText!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      TextFormField(
+                        controller: firstNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'First Name',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'First name is required.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: lastNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Last Name',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Last name is required.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: apartmentController,
+                        decoration: const InputDecoration(
+                          labelText: 'Apartment Number',
+                          prefixIcon: Icon(Icons.home_outlined),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving ? null : save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FlockColors.darkGreen,
+                    foregroundColor: FlockColors.cream,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: FlockColors.cream,
+                          ),
+                        )
+                      : const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    ).then((result) {
+      firstNameController.dispose();
+      lastNameController.dispose();
+      apartmentController.dispose();
+
+      if (result == null || !mounted) {
+        return;
+      }
+
+      setState(() {
+        _viewFirstName = result.firstName;
+        _viewLastName = result.lastName;
+        _viewApartment = result.apartment;
+      });
+    });
   }
 
   void _onMessage() {
@@ -149,7 +312,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.user.fullName,
+                              _effectiveFullName,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -167,9 +330,9 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  widget.user.apartmentNumber.isEmpty
+                                  _effectiveApartment.isEmpty
                                       ? 'No apartment'
-                                      : widget.user.apartmentNumber,
+                                      : _effectiveApartment,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: FlockColors.textSecondary,
@@ -224,7 +387,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                   ),
                   if (_expanded) ...[
                     const SizedBox(height: 12),
-                    if (widget.user.email != null && widget.user.email!.isNotEmpty) ...[
+                    if ((widget.user.email ?? '').isNotEmpty) ...[
                       const Text(
                         'Email',
                         style: TextStyle(
@@ -239,8 +402,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    if (widget.user.phoneNumber != null &&
-                        widget.user.phoneNumber!.isNotEmpty) ...[
+                    if ((widget.user.phoneNumber ?? '').isNotEmpty) ...[
                       const Text(
                         'Phone',
                         style: TextStyle(
@@ -331,4 +493,16 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
 
     return const Color(0xFF00897B);
   }
+}
+
+class _EditUserResult {
+  final String firstName;
+  final String lastName;
+  final String apartment;
+
+  const _EditUserResult({
+    required this.firstName,
+    required this.lastName,
+    required this.apartment,
+  });
 }

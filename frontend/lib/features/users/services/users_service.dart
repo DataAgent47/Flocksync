@@ -111,8 +111,22 @@ class UsersService {
     }
   }
 
+  /// Updates editable profile fields for a user document.
+  Future<void> updateUserDetails({
+    required String userId,
+    required String firstName,
+    required String lastName,
+    required String apartmentNumber,
+  }) async {
+    await _firestore.collection('users').doc(userId).set({
+      'first_name': firstName.trim(),
+      'last_name': lastName.trim(),
+      'apt_number': apartmentNumber.trim(),
+      'updated_at': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   /// Filters the users list based on the selected filter category.
-  ///
   /// [users] — all visible users (after visibility rules applied)
   /// [filter] — 'all', 'unverified', 'residents', or 'management'
   List<BuildingUser> filterUsers(List<BuildingUser> users, String filter) {
