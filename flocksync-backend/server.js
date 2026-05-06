@@ -240,6 +240,7 @@ app.get('/api/maps/verify', async (req, res) => {
 
 // profile picture route
 // for all profile picture uploads
+// dont need get request since this is stored publically, just call photo_url on the front
 app.post('/api/user/update-profile-picture', async (req, res) => {
    const { userId, photoUrl } = req.body
    if (!userId || !photoUrl) {
