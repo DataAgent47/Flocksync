@@ -8,6 +8,15 @@ import axios from 'axios'
 
 // TODO: add differentiation between account types, residents, management, application administrator
 
+// put in .env from the supabase
+// SUPABASE_URL=https://<the-long-string-of-letters-in-the-url>.supabase.co
+// go to settings -> api keys
+// SUPABASE_ANON_KEY=<publishable-key>
+// SUPABASE_SERVICE_ROLE_KEY=<secret-key>
+const supabase = createClient(
+   process.env.SUPABASE_URL,
+   process.env.SUPABASE_SERVICE_ROLE_KEY,
+)
 // OpenStreetMap Nominatim API configuration
 const MAP_BASE_URL = 'https://nominatim.openstreetmap.org'
 const DEFAULT_MAP_RESULT_LIMIT = 5
