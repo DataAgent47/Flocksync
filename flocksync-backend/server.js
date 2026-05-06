@@ -262,12 +262,24 @@ app.post(
                .status(400)
                .json({ error: 'User ID and document file are required.' })
          }
+         // variables for sharp
+         let fileBuffer = file.buffer
+         let fileExtension = file.originalname.split('.').pop()
+         let contentType = file.mimetype
 
-         // Generate a unique file name (e.g., users/123/timestamp-filename.pdf)
-         const fileExtension = file.originalname.split('.').pop()
+         // sharp image processing
+         if (file.mimetype.startsWith('image/')) {
+            fileBuffer = await sharp(file.buffer)
+               .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+               .jpeg({ quality: 80 }) // Converts to JPEG for consistent compression
+               .toBuffer()
+
+            fileExtension = 'jpg'
+            contentType = 'image/jpeg'
+         }
+
          const fileName = `${userId}/${Date.now()}.${fileExtension}`
 
-         // 1. Upload to Supabase Bucket
          const { data, error: uploadError } = await supabase.storage
             .from('verification-documents')
             .upload(fileName, file.buffer, {
@@ -277,14 +289,12 @@ app.post(
 
          if (uploadError) throw uploadError
 
-         // 2. Get the Public URL
          const {
             data: { publicUrl },
          } = supabase.storage
             .from('verification-documents')
             .getPublicUrl(fileName)
 
-         // 3. (Optional) Save this URL to the user's Firestore document
          await db.collection('users').doc(userId).update({
             verification_doc_url: publicUrl,
             verification_status: 'pending',
