@@ -60,7 +60,24 @@ app.use(
       credentials: true,
    }),
 )
-
+// multer for verification documents
+// define constraints
+const upload = multer({
+   storage: multer.memoryStorage(),
+   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+   fileFilter: (req, file, cb) => {
+      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
+      if (allowedTypes.includes(file.mimetype)) {
+         cb(null, true)
+      } else {
+         cb(
+            new Error(
+               'Invalid file type. Only JPEG, PNG, and PDF are allowed.',
+            ),
+         )
+      }
+   },
+})
 // Helper functions for map API
 const mapHeaders = {
    Accept: 'application/json',
@@ -135,11 +152,6 @@ admin.initializeApp({
 const db = admin.firestore()
 
 //--------------------SUPABASE
-// put in .env from the supabase
-// SUPABASE_URL=https://<the-long-string-of-letters-in-the-url>.supabase.co
-// go to settings -> api keys
-// SUPABASE_ANON_KEY=<publishable-key>
-// SUPABASE_SERVICE_ROLE_KEY=<secret-key>
 const supabase = createClient(
    process.env.SUPABASE_URL,
    process.env.SUPABASE_SERVICE_ROLE_KEY,
