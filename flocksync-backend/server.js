@@ -237,6 +237,22 @@ app.get('/api/maps/verify', async (req, res) => {
    }
 })
 
-//
+// profile picture route
+// for all profile picture uploads
+app.post('/api/user/update-profile-picture', async (req, res) => {
+   const { userId, photoUrl } = req.body
+   if (!userId || !photoUrl) {
+      return res.status(400).json({ error: 'Missing userId or photoUrl' })
+   }
+
+   try {
+      await db.collection('users').doc(userId).update({
+         photo_url: photoUrl,
+      })
+      res.json({ success: true })
+   } catch (error) {
+      res.status(500).json({ error: error.message })
+   }
+})
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
