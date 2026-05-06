@@ -355,4 +355,33 @@ app.get('/api/manager/view-document/:userId', async (req, res) => {
    res.json({ url: data.signedUrl })
 })
 
+//deletion path for testing
+app.delete('/api/user/delete-verification', async (req, res) => {
+   const { userId, storagePath } = req.body
+
+   if (!userId || !storagePath) {
+      return res.status(400).json({ error: 'Missing userId or storagePath' })
+   }
+
+   try {
+      const { data, error: storageError } = await supabase.storage
+         .from('verification-documents')
+         .remove([storagePath])
+
+      if (storageError) throw storageError
+
+      await db.collection('users').doc(userId).update({
+         verification: admin.firestore.FieldValue.delete(),
+      })
+
+      res.json({
+         success: true,
+         message: 'Test image and metadata deleted successfully',
+      })
+   } catch (error) {
+      console.error('Delete error:', error.message)
+      res.status(500).json({ error: error.message })
+   }
+})
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
