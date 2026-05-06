@@ -32,7 +32,7 @@ brew services start mongodb-community
 `use <database-name>`
 
 for docker and docker-compose:
-`docker compose -f docker-mongo.yml config` 
+`docker compose -f docker-mongo.yml config`
 
 in the .env for local development:
 `MONGO_URI=mongodb://localhost:27017/flocksync`
@@ -59,23 +59,33 @@ npm run dev
 ### 6. Verify
 
 - Check container health:
-	`docker ps --filter name=flocksync-mongodb`
+  `docker ps --filter name=flocksync-mongodb`
 - View Mongo logs:
-	`docker logs flocksync-mongodb --tail 100`
+  `docker logs flocksync-mongodb --tail 100`
 - Test API:
-	`curl http://localhost:5050/`
+  `curl http://localhost:5050/`
 
 ### 7. Stop / reset
 
 - Stop container:
-	`docker compose -f docker-compose.mongo.yml down`
+  `docker compose -f docker-compose.mongo.yml down`
 - Stop and remove DB data volume:
-	`docker compose -f docker-compose.mongo.yml down -v`
+  `docker compose -f docker-compose.mongo.yml down -v`
 
 ## Optional env variables
 
-- `PORT=5000` 
+- `PORT=3001`
 - `FRONTEND_ORIGIN=http://localhost:3000,http://123.123.123.123:1234`
 - `MAP_USER_AGENT=Flocksync/1.0 (contact: help@hos.sh)`
 
-For local development, the backend also allows `localhost` and `127.0.0.1` on any port, as Flutter randomizes its port. 
+### For Supabase
+
+`put in .env from the supabase`
+
+- `SUPABASE_URL=https://<the-long-string-of-letters-in-the-url>.supabase.co`
+
+- `go to settings -> api keys`
+- `SUPABASE_ANON_KEY=<publishable-key>`
+- `SUPABASE_SERVICE_ROLE_KEY=<secret-key>`
+
+For local development, the backend also allows `localhost` and `127.0.0.1` on any port, as Flutter randomizes its port.
