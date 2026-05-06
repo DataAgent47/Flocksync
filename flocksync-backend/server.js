@@ -339,4 +339,20 @@ app.post(
    },
 )
 
+// used for us to check grab the photo from supabase to manually check
+// should use admin role, but using manager role for now for easier testing (dont want to create a new user and manually set role to admin)
+app.get('/api/manager/view-document/:userId', async (req, res) => {
+   // get the path from firestore that was storing during verification upload
+   const userDoc = await db.collection('users').doc(req.params.userId).get()
+   const path = userDoc.data()?.verification?.storage_path
+
+   if (!path) return res.status(404).send('No document found')
+
+   //generate a fresh 15 minute link, supabase security things
+   const { data } = await supabase.storage
+      .from('verification-documents')
+      .createSignedUrl(path, 900)
+   res.json({ url: data.signedUrl })
+})
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
