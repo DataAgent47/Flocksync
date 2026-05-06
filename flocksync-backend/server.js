@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import mongoose from 'mongoose'
+// import mongoose from 'mongoose'
 import admin from 'firebase-admin'
 import serviceAccount from './serviceAccountKey.json' with { type: 'json' }
 import axios from 'axios'
@@ -75,7 +75,16 @@ const parseAddressResult = (result) => {
       .filter(Boolean)
       .join(' ')
       .trim()
-   const city = address.neighbourhood || address.suburb || address.city_district || address.city || address.town || address.village || address.hamlet || address.municipality || ''
+   const city =
+      address.neighbourhood ||
+      address.suburb ||
+      address.city_district ||
+      address.city ||
+      address.town ||
+      address.village ||
+      address.hamlet ||
+      address.municipality ||
+      ''
    const region = address.state || address.region || address.county || ''
    const postalCode = address.postcode || ''
    const countryCode = (address.country_code || '').toUpperCase()
@@ -123,11 +132,10 @@ admin.initializeApp({
 })
 
 // using mongodb
-mongoose
-   .connect(process.env.MONGO_URI)
-   .then(() => console.log('MongoDB connected'))
-   .catch((err) => console.error('MongoDB connection error:', err))
-
+// mongoose
+//    .connect(process.env.MONGO_URI)
+//    .then(() => console.log('MongoDB connected'))
+//    .catch((err) => console.error('MongoDB connection error:', err))
 
 /*
    API Endpoints
@@ -136,10 +144,11 @@ mongoose
 // first get request
 app.get('/', (req, res) => res.send('Hello World'))
 
-// Address autocomplete 
+// Address autocomplete
 app.get('/api/maps/autocomplete', async (req, res) => {
    const query = req.query.q?.trim()
-   const limit = Number.parseInt(req.query.limit, 10) || DEFAULT_MAP_RESULT_LIMIT
+   const limit =
+      Number.parseInt(req.query.limit, 10) || DEFAULT_MAP_RESULT_LIMIT
 
    if (!query || query.length < 3) {
       return sendError(
@@ -158,7 +167,11 @@ app.get('/api/maps/autocomplete', async (req, res) => {
       return res.json({ suggestions })
    } catch (error) {
       console.error('Address autocomplete failed:', error.message)
-      return sendError(res, 502, 'Unable to fetch address suggestions right now.')
+      return sendError(
+         res,
+         502,
+         'Unable to fetch address suggestions right now.',
+      )
    }
 })
 
@@ -196,7 +209,11 @@ app.get('/api/maps/verify', async (req, res) => {
       })
    } catch (error) {
       console.error('Address verification failed:', error.message)
-      return sendError(res, 502, 'Unable to verify the building address right now.')
+      return sendError(
+         res,
+         502,
+         'Unable to verify the building address right now.',
+      )
    }
 })
 
