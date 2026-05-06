@@ -12,13 +12,15 @@
    "license": "ISC",
    "type": "module",
    "dependencies": {
+      "@supabase/supabase-js": "^2.105.3",
       "axios": "^1.13.6",
       "cors": "^2.8.6",
       "csv-parser": "^3.2.0",
       "dotenv": "^17.3.1",
       "express": "^5.2.1",
       "firebase-admin": "^13.6.1",
-      "mongoose": "^9.2.2"
+      "mongoose": "^9.2.2",
+      "multer": "^2.1.1"
    },
    "devDependencies": {
       "nodemon": "^3.1.14"
