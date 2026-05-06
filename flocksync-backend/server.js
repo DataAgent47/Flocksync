@@ -7,6 +7,7 @@ import serviceAccount from './serviceAccountKey.json' with { type: 'json' }
 import axios from 'axios'
 import { createClient } from '@supabase/supabase-js'
 import multer from 'multer'
+import sharp from 'sharp'
 
 // TODO: add differentiation between account types, residents, management, application administrator
 
@@ -62,9 +63,11 @@ app.use(
 )
 // multer for verification documents
 // define constraints
+// max 10mb
+// only allow jpeg png and pdf
 const upload = multer({
    storage: multer.memoryStorage(),
-   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+   limits: { fileSize: 10 * 1024 * 1024 },
    fileFilter: (req, file, cb) => {
       const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
       if (allowedTypes.includes(file.mimetype)) {
@@ -78,6 +81,7 @@ const upload = multer({
       }
    },
 })
+
 // Helper functions for map API
 const mapHeaders = {
    Accept: 'application/json',
@@ -243,5 +247,59 @@ app.get('/api/maps/verify', async (req, res) => {
       )
    }
 })
+
+// verification docs using supabase cloud storage 0.5gb limit
+app.post(
+   '/api/user/upload-verification',
+   upload.single('document'),
+   async (req, res) => {
+      try {
+         const { userId } = req.body
+         const file = req.file
+
+         if (!userId || !file) {
+            return res
+               .status(400)
+               .json({ error: 'User ID and document file are required.' })
+         }
+
+         // Generate a unique file name (e.g., users/123/timestamp-filename.pdf)
+         const fileExtension = file.originalname.split('.').pop()
+         const fileName = `${userId}/${Date.now()}.${fileExtension}`
+
+         // 1. Upload to Supabase Bucket
+         const { data, error: uploadError } = await supabase.storage
+            .from('verification-documents')
+            .upload(fileName, file.buffer, {
+               contentType: file.mimetype,
+               upsert: true,
+            })
+
+         if (uploadError) throw uploadError
+
+         // 2. Get the Public URL
+         const {
+            data: { publicUrl },
+         } = supabase.storage
+            .from('verification-documents')
+            .getPublicUrl(fileName)
+
+         // 3. (Optional) Save this URL to the user's Firestore document
+         await db.collection('users').doc(userId).update({
+            verification_doc_url: publicUrl,
+            verification_status: 'pending',
+         })
+
+         res.json({
+            success: true,
+            publicUrl,
+            message: 'Document uploaded successfully',
+         })
+      } catch (error) {
+         console.error('Upload error:', error.message)
+         res.status(500).json({ error: error.message })
+      }
+   },
+)
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
