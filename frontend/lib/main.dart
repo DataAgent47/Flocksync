@@ -122,21 +122,29 @@ class _MainShellState extends State<MainShell> {
           if (data == null) return;
           final onboardingState =
               data['onboarding_state'] as Map<String, dynamic>?;
-          final nextBuildingId = onboardingState?['property_id'] as String?;
+          final fromOnboarding =
+              (onboardingState?['property_id'] as String?)?.trim() ?? '';
+          final fromRoot = (data['property_id'] as String?)?.trim() ?? '';
+          final resolvedBuildingId = fromOnboarding.isNotEmpty
+              ? fromOnboarding
+              : fromRoot;
           final role = (data['role'] as String?) ?? 'resident';
           final verified = await _lookupVerification(
             role: role,
-            buildingId: nextBuildingId,
+            buildingId:
+                resolvedBuildingId.isEmpty ? null : resolvedBuildingId,
           );
-          final postalCode = await _lookupPostalCode(nextBuildingId);
+          final postalCode = await _lookupPostalCode(
+            resolvedBuildingId.isEmpty ? null : resolvedBuildingId,
+          );
           setState(() {
             final name = data['first_name'] as String?;
             if (name != null && name.trim().isNotEmpty) {
               _firstName = name.trim();
             }
 
-            // get Building ID from firestore
-            _buildingId = data['property_id'] as String?;
+            _buildingId =
+                resolvedBuildingId.isEmpty ? null : resolvedBuildingId;
 
             _isManagement = role == 'manager';
             _isVerified = verified;
@@ -320,6 +328,7 @@ class _DashboardScreen extends StatelessWidget {
               currentUserId: userId,
               currentUserName: userName,
               isManagement: isManagement,
+              isVerified: isVerified,
             ),
           ),
         ],
@@ -500,6 +509,7 @@ class _ForumsLandingScreen extends StatelessWidget {
                             currentUserId: userId,
                             currentUserName: userName,
                             isManagement: isManagement,
+                            isVerified: isVerified,
                           ),
                         ),
                       )
@@ -527,6 +537,7 @@ class _ForumsLandingScreen extends StatelessWidget {
                             currentUserId: userId,
                             currentUserName: userName,
                             isManagement: isManagement,
+                            isVerified: isVerified,
                           ),
                         ),
                       )

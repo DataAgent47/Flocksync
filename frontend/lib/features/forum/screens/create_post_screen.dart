@@ -15,6 +15,8 @@ class CreatePostScreen extends StatefulWidget {
   final String currentUserId;
   final String currentUserName;
   final String currentUserAvatarUrl;
+  final String currentUserRole;
+  final bool currentUserIsVerified;
 
   const CreatePostScreen({
     super.key,
@@ -25,6 +27,8 @@ class CreatePostScreen extends StatefulWidget {
     required this.currentUserId,
     required this.currentUserName,
     this.currentUserAvatarUrl = '',
+    required this.currentUserRole,
+    required this.currentUserIsVerified,
   }) : forumKey = forumKey ?? buildingId;
 
   @override
@@ -79,6 +83,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       authorId: widget.currentUserId,
       authorName: widget.currentUserName,
       authorAvatarUrl: widget.currentUserAvatarUrl,
+      authorRole: widget.currentUserRole,
+      authorIsVerified: widget.currentUserIsVerified,
       buildingId: widget.buildingId,
       title: _titleController.text.trim(),
       body: _bodyController.text.trim(),

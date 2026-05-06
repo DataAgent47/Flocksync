@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/flock_theme.dart';
 import '../../../core/widgets/flock_message_banner.dart';
+import '../../../core/widgets/verification_badge.dart';
 import '../../../core/widgets/settings_tile.dart';
 import '../controllers/settings_controller.dart';
 import 'building_settings_screen.dart';
@@ -119,14 +120,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            fullName.isEmpty ? 'Your Profile' : fullName,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: FlockColors.darkGreen,
-                            ),
-                          ),
+                          child: profile == null || profile.propertyId.isEmpty
+                              ? Text(
+                                  fullName.isEmpty ? 'Your Profile' : fullName,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: FlockColors.darkGreen,
+                                  ),
+                                )
+                              : StreamBuilder<bool?>(
+                                  stream: _controller.membershipVerificationStream(
+                                    uid: widget.user.uid,
+                                    propertyId: profile.propertyId,
+                                    role: profile.role,
+                                  ),
+                                  builder: (context, verificationSnapshot) {
+                                    final isVerified =
+                                        verificationSnapshot.data ?? false;
+                                    return Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            fullName.isEmpty
+                                                ? 'Your Profile'
+                                                : fullName,
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w700,
+                                              color: FlockColors.darkGreen,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        VerificationBadge(
+                                          isVerified: isVerified,
+                                          role: profile.role,
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
                         ),
                       ],
                     );

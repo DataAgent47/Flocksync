@@ -343,8 +343,10 @@ class OnboardingFirestoreService {
       'manager_id': uid,
       'property_id': propertyId,
       'manager_role': managementRole,
-      'is_verified': false,
-      'verified_at': null,
+      // Managers completing onboarding are trusted for their building (forum rules
+      // require is_verified == true on this doc).
+      'is_verified': true,
+      'verified_at': timestamp,
       'updated_at': timestamp,
     };
 

@@ -63,11 +63,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/residents/$(propertyId + "_" + request.auth.uid)).data.is_verified == true;
     }
 
+    // Manager onboarding always created this doc with is_verified: false while forum rules
+    // required true, which blocked all managers. Membership on this doc is the gate; optional
+    // is_verified can still be used in the app UI for other workflows.
     function isVerifiedManager(propertyId) {
       return propertyId is string &&
         propertyId.size() > 0 &&
-        exists(/databases/$(database)/documents/managers/$(propertyId + "_" + request.auth.uid)) &&
-        get(/databases/$(database)/documents/managers/$(propertyId + "_" + request.auth.uid)).data.is_verified == true;
+        exists(/databases/$(database)/documents/managers/$(propertyId + "_" + request.auth.uid));
     }
 
     function isVerifiedForProperty(propertyId) {

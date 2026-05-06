@@ -16,6 +16,7 @@ class ForumFeedScreen extends StatelessWidget {
   final String currentUserName;
   final String currentUserAvatarUrl;
   final bool isManagement;
+  final bool isVerified;
 
   const ForumFeedScreen({
     super.key,
@@ -26,6 +27,7 @@ class ForumFeedScreen extends StatelessWidget {
     required this.currentUserName,
     this.currentUserAvatarUrl = '',
     this.isManagement = false,
+    this.isVerified = false,
   }) : forumKey = forumKey ?? buildingId;
 
   @override
@@ -40,6 +42,7 @@ class ForumFeedScreen extends StatelessWidget {
         currentUserName: currentUserName,
         currentUserAvatarUrl: currentUserAvatarUrl,
         isManagement: isManagement,
+        isVerified: isVerified,
       ),
     );
   }
@@ -53,6 +56,7 @@ class _ForumFeedView extends StatelessWidget {
   final String currentUserName;
   final String currentUserAvatarUrl;
   final bool isManagement;
+  final bool isVerified;
 
   const _ForumFeedView({
     required this.buildingId,
@@ -62,6 +66,7 @@ class _ForumFeedView extends StatelessWidget {
     required this.currentUserName,
     required this.currentUserAvatarUrl,
     required this.isManagement,
+    required this.isVerified,
   });
 
   @override
@@ -131,6 +136,9 @@ class _ForumFeedView extends StatelessWidget {
                       currentUserId: currentUserId,
                       currentUserName: currentUserName,
                       currentUserAvatarUrl: currentUserAvatarUrl,
+                      currentUserRole:
+                          isManagement ? 'manager' : 'resident',
+                      currentUserIsVerified: isVerified,
                     ),
                   ),
                 ),

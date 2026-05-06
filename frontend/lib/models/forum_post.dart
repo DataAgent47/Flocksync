@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum PostCategory { announcement, maintenance, general, question, marketplace }
-
 enum ForumType { building, neighborhood }
 
 class ForumPost {
@@ -9,6 +8,11 @@ class ForumPost {
   final String authorId;
   final String authorName;
   final String authorAvatarUrl;
+  /// Role at the time of post creation (e.g. 'resident' or 'manager').
+  final String authorRole;
+
+  /// Verification status at the time of post creation.
+  final bool authorIsVerified;
   final String buildingId;
   final ForumType forumType;
   final String forumKey;
@@ -28,6 +32,8 @@ class ForumPost {
     required this.authorId,
     required this.authorName,
     this.authorAvatarUrl = '',
+    this.authorRole = 'resident',
+    this.authorIsVerified = false,
     required this.buildingId,
     this.forumType = ForumType.building,
     String? forumKey,
@@ -41,10 +47,9 @@ class ForumPost {
     required this.createdAt,
     required this.updatedAt,
     this.isPinned = false,
-  }) : forumKey = forumKey ?? buildingId;
+  }) : forumKey = (forumKey ?? buildingId);
 
   int get upvoteCount => upvotedBy.length;
-
   bool isUpvotedBy(String userId) => upvotedBy.contains(userId);
 
   factory ForumPost.fromFirestore(DocumentSnapshot doc) {
@@ -64,6 +69,8 @@ class ForumPost {
       authorId: data['authorId'] ?? data['authorUid'] ?? '',
       authorName: data['authorName'] ?? 'Anonymous',
       authorAvatarUrl: data['authorAvatarUrl'] ?? '',
+      authorRole: (data['authorRole'] ?? 'resident').toString(),
+      authorIsVerified: (data['authorIsVerified'] as bool?) ?? false,
       buildingId: data['buildingId'] ?? '',
       forumType: ForumType.values.firstWhere(
         (e) => e.name == (data['forumType'] ?? 'building'),
@@ -92,6 +99,8 @@ class ForumPost {
       'authorUid': authorId,
       'authorName': authorName,
       'authorAvatarUrl': authorAvatarUrl,
+      'authorRole': authorRole,
+      'authorIsVerified': authorIsVerified,
       'buildingId': buildingId,
       'forumType': forumType.name,
       'forumKey': forumKey,
@@ -119,6 +128,8 @@ class ForumPost {
       authorId: authorId,
       authorName: authorName,
       authorAvatarUrl: authorAvatarUrl,
+      authorRole: authorRole,
+      authorIsVerified: authorIsVerified,
       buildingId: buildingId,
       forumType: forumType,
       forumKey: forumKey,

@@ -50,6 +50,8 @@ class ForumController extends ChangeNotifier {
     required String authorId,
     required String authorName,
     String authorAvatarUrl = '',
+    required String authorRole,
+    required bool authorIsVerified,
     required String buildingId,
     required String title,
     required String body,
@@ -68,6 +70,8 @@ class ForumController extends ChangeNotifier {
         title: title,
         body: body,
         category: category,
+        authorRole: authorRole,
+        authorIsVerified: authorIsVerified,
         imageFiles: imageFiles,
       );
       return postId;
