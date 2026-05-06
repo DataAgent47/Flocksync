@@ -5,18 +5,11 @@ import dotenv from 'dotenv'
 import admin from 'firebase-admin'
 import serviceAccount from './serviceAccountKey.json' with { type: 'json' }
 import axios from 'axios'
+import { createClient } from '@supabase/supabase-js'
+import multer from 'multer'
 
 // TODO: add differentiation between account types, residents, management, application administrator
 
-// put in .env from the supabase
-// SUPABASE_URL=https://<the-long-string-of-letters-in-the-url>.supabase.co
-// go to settings -> api keys
-// SUPABASE_ANON_KEY=<publishable-key>
-// SUPABASE_SERVICE_ROLE_KEY=<secret-key>
-const supabase = createClient(
-   process.env.SUPABASE_URL,
-   process.env.SUPABASE_SERVICE_ROLE_KEY,
-)
 // OpenStreetMap Nominatim API configuration
 const MAP_BASE_URL = 'https://nominatim.openstreetmap.org'
 const DEFAULT_MAP_RESULT_LIMIT = 5
@@ -31,6 +24,24 @@ const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
    .split(',')
    .map((origin) => origin.trim())
    .filter(Boolean)
+
+//--------------------SUPABASE
+// put in .env from the supabase
+// SUPABASE_URL=https://<the-long-string-of-letters-in-the-url>.supabase.co
+// go to settings -> api keys
+// SUPABASE_ANON_KEY=<publishable-key>
+// SUPABASE_SERVICE_ROLE_KEY=<secret-key>
+const supabase = createClient(
+   process.env.SUPABASE_URL,
+   process.env.SUPABASE_SERVICE_ROLE_KEY,
+)
+// multer memory storage(cloud)
+// 10mb limit
+// use for the verification documents
+const upload = multer({
+   storage: multer.memoryStorage(),
+   limits: { fileSize: 10 * 1024 * 1024 },
+})
 
 const isLocalDevOrigin = (origin) => {
    try {
@@ -225,5 +236,7 @@ app.get('/api/maps/verify', async (req, res) => {
       )
    }
 })
+
+//
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
