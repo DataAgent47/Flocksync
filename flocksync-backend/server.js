@@ -304,20 +304,32 @@ app.post(
 
          if (uploadError) throw uploadError
 
-         const {
-            data: { publicUrl },
-         } = supabase.storage
-            .from('verification-documents')
-            .getPublicUrl(fileName)
+         // generate a signed url that lasts 1 hour since this bucket is private
+         const { data: signedData, error: signedUrlError } =
+            await supabase.storage
+               .from('verification-documents')
+               .createSignedUrl(fileName, 3600)
 
-         await db.collection('users').doc(userId).update({
-            verification_doc_url: publicUrl,
-            verification_status: 'pending',
-         })
+         if (signedUrlError) throw signedUrlError
 
+         await db
+            .collection('users')
+            .doc(userId)
+            .set(
+               {
+                  verification: {
+                     storage_path: fileName,
+                     status: 'pending',
+                     submitted_at: admin.firestore.FieldValue.serverTimestamp(),
+                  },
+               },
+               { merge: true },
+            )
+
+         // send temporary link to frontend
          res.json({
             success: true,
-            publicUrl,
+            previewUrl: signedData.signedUrl,
             message: 'Document uploaded successfully',
          })
       } catch (error) {
