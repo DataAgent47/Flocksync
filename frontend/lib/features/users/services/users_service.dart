@@ -37,6 +37,8 @@ class UsersService {
           final lastName = (data['last_name'] as String? ?? '').trim();
           final apartmentNumber = (data['apt_number'] as String? ?? '').trim();
           final photoUrl = (data['photo_url'] as String? ?? '').trim();
+          final email = (data['contact_email'] as String? ?? '').trim();
+          final phoneNumber = (data['phone'] as String? ?? '').trim();
 
           if (firstName.isEmpty || lastName.isEmpty) {
             continue;
@@ -72,6 +74,8 @@ class UsersService {
               lastName: lastName,
               role: role,
               managerRole: managerRole,
+              email: email.isEmpty ? null : email,
+              phoneNumber: phoneNumber.isEmpty ? null : phoneNumber,
               isVerified: isVerified,
               photoUrl: photoUrl,
               apartmentNumber: apartmentNumber,
@@ -87,6 +91,24 @@ class UsersService {
         return <BuildingUser>[];
       }
     });
+  }
+
+  /// Verify a user
+  Future<void> setVerificationStatus({
+    required String userId,
+    required String propertyId,
+    required String role,
+    required bool isVerified,
+  }) async {
+    try {
+      final collection = role == 'manager' ? 'managers' : 'residents';
+      final docId = '${propertyId}_$userId';
+      await _firestore.collection(collection).doc(docId).set({
+        'is_verified': isVerified,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Filters the users list based on the selected filter category.
@@ -167,4 +189,5 @@ class UsersService {
       return null;
     }
   }
+
 }

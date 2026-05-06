@@ -4,8 +4,9 @@ class BuildingUser {
   final String firstName;
   final String lastName;
   final String role; // 'manager' or 'resident'
-  final String?
-  managerRole; // e.g. 'Building Owner', 'Supervisor', etc. (only if manager)
+  final String? managerRole; // e.g. 'Building Owner', 'Supervisor', etc. (only if manager)
+  final String? email;
+  final String? phoneNumber;
   final bool isVerified;
   final String photoUrl;
   final String apartmentNumber;
@@ -16,6 +17,8 @@ class BuildingUser {
     required this.lastName,
     required this.role,
     this.managerRole,
+    this.email,
+    this.phoneNumber,
     required this.isVerified,
     required this.photoUrl,
     required this.apartmentNumber,

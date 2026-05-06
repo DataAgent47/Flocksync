@@ -216,7 +216,13 @@ class _UsersScreenState extends State<UsersScreen> {
                         itemCount: filteredUsers.length,
                         itemBuilder: (context, index) {
                           final user = filteredUsers[index];
-                          return UserRow(user: user);
+                          return UserRow(
+                            user: user,
+                            currentUserId: widget.userId,
+                            propertyId: widget.buildingId,
+                            isManagement: widget.isManagement,
+                            service: _service,
+                          );
                         },
                       );
                     },
