@@ -247,10 +247,12 @@ app.post('/api/user/update-profile-picture', async (req, res) => {
    }
 
    try {
-      await db.collection('users').doc(userId).update({
-         photo_url: photoUrl,
-      })
-      res.json({ success: true })
+      await db.collection('users').doc(userId).set(
+         {
+            photo_url: photoUrl,
+         },
+         { merge: true },
+      )
    } catch (error) {
       res.status(500).json({ error: error.message })
    }
