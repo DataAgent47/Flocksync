@@ -10,6 +10,8 @@ import 'post_detail_screen.dart';
 
 class ForumFeedScreen extends StatelessWidget {
   final String buildingId;
+  final ForumType forumType;
+  final String forumKey;
   final String currentUserId;
   final String currentUserName;
   final String currentUserAvatarUrl;
@@ -18,18 +20,22 @@ class ForumFeedScreen extends StatelessWidget {
   const ForumFeedScreen({
     super.key,
     required this.buildingId,
+    this.forumType = ForumType.building,
+    String? forumKey,
     required this.currentUserId,
     required this.currentUserName,
     this.currentUserAvatarUrl = '',
     this.isManagement = false,
-  });
+  }) : forumKey = forumKey ?? buildingId;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ForumController(),
+      create: (_) => ForumController(forumType: forumType, forumKey: forumKey),
       child: _ForumFeedView(
         buildingId: buildingId,
+        forumType: forumType,
+        forumKey: forumKey,
         currentUserId: currentUserId,
         currentUserName: currentUserName,
         currentUserAvatarUrl: currentUserAvatarUrl,
@@ -41,6 +47,8 @@ class ForumFeedScreen extends StatelessWidget {
 
 class _ForumFeedView extends StatelessWidget {
   final String buildingId;
+  final ForumType forumType;
+  final String forumKey;
   final String currentUserId;
   final String currentUserName;
   final String currentUserAvatarUrl;
@@ -48,6 +56,8 @@ class _ForumFeedView extends StatelessWidget {
 
   const _ForumFeedView({
     required this.buildingId,
+    required this.forumType,
+    required this.forumKey,
     required this.currentUserId,
     required this.currentUserName,
     required this.currentUserAvatarUrl,
@@ -57,6 +67,16 @@ class _ForumFeedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ForumController>();
+    final hasForumContext = forumKey.trim().isNotEmpty;
+    final isNeighborhood = forumType == ForumType.neighborhood;
+    final availableCategories = isNeighborhood
+        ? const [
+            PostCategory.announcement,
+            PostCategory.general,
+            PostCategory.question,
+            PostCategory.marketplace,
+          ]
+        : PostCategory.values;
 
     return Scaffold(
       backgroundColor: FlockColors.cream,
@@ -66,122 +86,167 @@ class _ForumFeedView extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Building Forum',
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20,
-                    color: FlockColors.darkGreen,
-                    letterSpacing: -0.3)),
-            const Text('Share with your neighbors',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: FlockColors.textSecondary,
-                    fontWeight: FontWeight.w400)),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChangeNotifierProvider.value(
-              value: controller,
-              child: CreatePostScreen(
-                buildingId: buildingId,
-                currentUserId: currentUserId,
-                currentUserName: currentUserName,
-                currentUserAvatarUrl: currentUserAvatarUrl,
+            Text(
+              isNeighborhood ? 'Zip Code Forum' : 'Building Forum',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                color: FlockColors.darkGreen,
+                letterSpacing: -0.3,
               ),
             ),
-          ),
+            Text(
+              isNeighborhood
+                  ? 'Connect with your neighborhood'
+                  : 'Share with your neighbors',
+              style: TextStyle(
+                fontSize: 12,
+                color: FlockColors.textSecondary,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: _ForumBadge(
+              label: isNeighborhood ? 'Neighborhood' : 'Building',
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: hasForumContext
+            ? () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChangeNotifierProvider.value(
+                    value: controller,
+                    child: CreatePostScreen(
+                      buildingId: buildingId,
+                      forumType: forumType,
+                      forumKey: forumKey,
+                      categories: availableCategories,
+                      currentUserId: currentUserId,
+                      currentUserName: currentUserName,
+                      currentUserAvatarUrl: currentUserAvatarUrl,
+                    ),
+                  ),
+                ),
+              )
+            : null,
         backgroundColor: FlockColors.darkGreen,
         foregroundColor: FlockColors.cream,
         icon: const Icon(Icons.edit_outlined, size: 18),
-        label: const Text('New Post',
-            style: TextStyle(fontWeight: FontWeight.w600)),
+        label: const Text(
+          'New Post',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
       body: Column(
         children: [
           if (controller.errorMessage != null)
             _ErrorBanner(
-                message: controller.errorMessage!,
-                onDismiss: controller.clearError),
+              message: controller.errorMessage!,
+              onDismiss: controller.clearError,
+            ),
 
           CategoryFilterBar(
-              selected: controller.selectedCategory,
-              onSelected: controller.setCategory),
+            selected: controller.selectedCategory,
+            onSelected: controller.setCategory,
+            categories: availableCategories,
+          ),
 
           Expanded(
-            child: StreamBuilder<List<ForumPost>>(
-              stream: controller.postsStream(buildingId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child: CircularProgressIndicator(
-                          color: FlockColors.midGreen));
-                }
-                if (snapshot.hasError) {
-                  return _EmptyState(
-                      icon: Icons.error_outline,
-                      message: 'Something went wrong.\nPlease try again.');
-                }
-
-                final posts = snapshot.data ?? [];
-                if (posts.isEmpty) {
-                  return _EmptyState(
-                    icon: Icons.forum_outlined,
-                    message: controller.selectedCategory != null
-                        ? 'No posts in this category yet.\nBe the first!'
-                        : 'No posts yet.\nStart the conversation!',
-                  );
-                }
-
-                return RefreshIndicator(
-                  color: FlockColors.darkGreen,
-                  backgroundColor: FlockColors.cream,
-                  onRefresh: () async {},
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                    itemCount: posts.length,
-                    itemBuilder: (context, index) {
-                      final post = posts[index];
-                      return PostCard(
-                        post: post,
-                        currentUserId: currentUserId,
-                        isManagement: isManagement,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChangeNotifierProvider.value(
-                              value: controller,
-                              child: PostDetailScreen(
-                                postId: post.id,
-                                currentUserId: currentUserId,
-                                currentUserName: currentUserName,
-                                currentUserAvatarUrl: currentUserAvatarUrl,
-                                isManagement: isManagement,
-                              ),
-                            ),
+            child: !hasForumContext
+                ? const _EmptyState(
+                    icon: Icons.location_city_outlined,
+                    message:
+                        'We are still loading your forum.\nPlease wait a moment and try again.',
+                  )
+                : StreamBuilder<List<ForumPost>>(
+                    stream: controller.postsStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: FlockColors.midGreen,
                           ),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        final message = _friendlyErrorMessage(snapshot.error);
+                        return _EmptyState(
+                          icon: Icons.error_outline,
+                          message: message,
+                        );
+                      }
+
+                      final posts = snapshot.data ?? [];
+                      if (posts.isEmpty) {
+                        return _EmptyState(
+                          icon: Icons.forum_outlined,
+                          message: controller.selectedCategory != null
+                              ? 'No posts in this category yet.\nBe the first!'
+                              : 'No posts yet.\nStart the conversation!',
+                        );
+                      }
+
+                      return RefreshIndicator(
+                        color: FlockColors.darkGreen,
+                        backgroundColor: FlockColors.cream,
+                        onRefresh: () async {},
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                          itemCount: posts.length,
+                          itemBuilder: (context, index) {
+                            final post = posts[index];
+                            return PostCard(
+                              post: post,
+                              currentUserId: currentUserId,
+                              isManagement: isManagement,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChangeNotifierProvider.value(
+                                    value: controller,
+                                    child: PostDetailScreen(
+                                      postId: post.id,
+                                      forumType: forumType,
+                                      currentUserId: currentUserId,
+                                      currentUserName: currentUserName,
+                                      currentUserAvatarUrl:
+                                          currentUserAvatarUrl,
+                                      isManagement: isManagement,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              onUpvote: () => controller.togglePostUpvote(
+                                post.id,
+                                currentUserId,
+                              ),
+                              onDelete:
+                                  isManagement || post.authorId == currentUserId
+                                  ? () => _confirmDelete(
+                                      context,
+                                      controller,
+                                      post.id,
+                                    )
+                                  : null,
+                              onPin: isManagement
+                                  ? () => controller.togglePin(
+                                      post.id,
+                                      !post.isPinned,
+                                    )
+                                  : null,
+                            );
+                          },
                         ),
-                        onUpvote: () => controller.togglePostUpvote(
-                            post.id, currentUserId),
-                        onDelete:
-                            isManagement || post.authorId == currentUserId
-                                ? () => _confirmDelete(
-                                    context, controller, post.id)
-                                : null,
-                        onPin: isManagement
-                            ? () => controller.togglePin(
-                                post.id, !post.isPinned)
-                            : null,
                       );
                     },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -189,23 +254,30 @@ class _ForumFeedView extends StatelessWidget {
   }
 
   void _confirmDelete(
-      BuildContext context, ForumController controller, String postId) {
+    BuildContext context,
+    ForumController controller,
+    String postId,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: FlockColors.cream,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Post',
-            style: TextStyle(color: FlockColors.darkGreen)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Delete Post',
+          style: TextStyle(color: FlockColors.darkGreen),
+        ),
         content: const Text(
-            'This will permanently delete the post and all replies.',
-            style: TextStyle(color: FlockColors.textSecondary)),
+          'This will permanently delete the post and all replies.',
+          style: TextStyle(color: FlockColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(color: FlockColors.midGreen)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: FlockColors.midGreen),
+            ),
           ),
           FilledButton(
             onPressed: () async {
@@ -213,14 +285,34 @@ class _ForumFeedView extends StatelessWidget {
               await controller.deletePost(postId);
             },
             style: FilledButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10))),
+              backgroundColor: Colors.red.shade700,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             child: const Text('Delete'),
           ),
         ],
       ),
     );
+  }
+
+  String _friendlyErrorMessage(Object? error) {
+    final raw = (error ?? '').toString().toLowerCase();
+    if (raw.contains('permission-denied') ||
+        raw.contains('missing or insufficient permissions')) {
+      return 'You do not have access to view posts right now.\nPlease sign in again or check your account permissions.';
+    }
+    if (raw.contains('unauthenticated')) {
+      return 'You are signed out.\nPlease sign in to view forum posts.';
+    }
+    if (raw.contains('unavailable') ||
+        raw.contains('network') ||
+        raw.contains('failed to get document') ||
+        raw.contains('offline')) {
+      return 'Unable to reach the database right now.\nPlease check your connection and try again.';
+    }
+    return 'Something went wrong while loading posts.\nPlease try again.';
   }
 }
 
@@ -237,10 +329,15 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(icon, size: 52, color: FlockColors.tan),
           const SizedBox(height: 16),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: FlockColors.textSecondary, height: 1.5, fontSize: 15)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: FlockColors.textSecondary,
+              height: 1.5,
+              fontSize: 15,
+            ),
+          ),
         ],
       ),
     );
@@ -257,19 +354,50 @@ class _ErrorBanner extends StatelessWidget {
     return Container(
       color: const Color(0xFFF5E8D8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(children: [
-        const Icon(Icons.error_outline, color: Color(0xFF8B2E00), size: 18),
-        const SizedBox(width: 8),
-        Expanded(
-            child: Text(message,
-                style: const TextStyle(
-                    color: Color(0xFF8B2E00), fontSize: 13))),
-        TextButton(
-          onPressed: onDismiss,
-          child: const Text('Dismiss',
-              style: TextStyle(color: Color(0xFF8B2E00))),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Color(0xFF8B2E00), size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Color(0xFF8B2E00), fontSize: 13),
+            ),
+          ),
+          TextButton(
+            onPressed: onDismiss,
+            child: const Text(
+              'Dismiss',
+              style: TextStyle(color: Color(0xFF8B2E00)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ForumBadge extends StatelessWidget {
+  final String label;
+  const _ForumBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: FlockColors.cardBackground,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: FlockColors.tan),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: FlockColors.darkGreen,
         ),
-      ]),
+      ),
     );
   }
 }

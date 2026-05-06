@@ -7,6 +7,7 @@ import 'core/theme/flock_theme.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
+import 'models/forum_post.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/services/onboarding_firestore_service.dart';
 import 'features/settings/screens/settings_screen.dart';
@@ -16,6 +17,12 @@ import 'dart:ui';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // ── Local emulator (dev only) ──────────────────────────────────────────
+  const bool kUseEmulator = bool.fromEnvironment('USE_EMULATOR');
+  if (kUseEmulator) {
+    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+  }
+  // ───────────────────────────────────────────────────────────────────────
   runApp(const FlockSyncApp());
 }
 
@@ -95,10 +102,12 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 2; // start on Forums tab for testing
+  int _currentIndex = 0; // default to Dashboard
   String? _firstName;
   String? _buildingId;
+  String _zipCode = '';
   bool _isManagement = false;
+  bool _isVerified = false;
 
   @override
   void initState() {
@@ -107,10 +116,19 @@ class _MainShellState extends State<MainShell> {
         .collection('users')
         .doc(widget.user.uid)
         .snapshots()
-        .listen((doc) {
+        .listen((doc) async {
           if (!mounted) return;
           final data = doc.data();
           if (data == null) return;
+          final onboardingState =
+              data['onboarding_state'] as Map<String, dynamic>?;
+          final nextBuildingId = onboardingState?['property_id'] as String?;
+          final role = (data['role'] as String?) ?? 'resident';
+          final verified = await _lookupVerification(
+            role: role,
+            buildingId: nextBuildingId,
+          );
+          final postalCode = await _lookupPostalCode(nextBuildingId);
           setState(() {
             final name = data['first_name'] as String?;
             if (name != null && name.trim().isNotEmpty) {
@@ -120,9 +138,34 @@ class _MainShellState extends State<MainShell> {
             // get Building ID from firestore
             _buildingId = data['property_id'] as String?;
 
-            _isManagement = (data['role'] as String?) == 'manager';
+            _isManagement = role == 'manager';
+            _isVerified = verified;
+            _zipCode = postalCode;
           });
         });
+  }
+
+  Future<bool> _lookupVerification({
+    required String role,
+    required String? buildingId,
+  }) async {
+    if (buildingId == null || buildingId.trim().isEmpty) return false;
+    final collection = role == 'manager' ? 'managers' : 'residents';
+    final membershipId = '${buildingId}_${widget.user.uid}';
+    final doc = await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(membershipId)
+        .get();
+    return (doc.data()?['is_verified'] as bool?) ?? false;
+  }
+
+  Future<String> _lookupPostalCode(String? buildingId) async {
+    if (buildingId == null || buildingId.trim().isEmpty) return '';
+    final doc = await FirebaseFirestore.instance
+        .collection('properties')
+        .doc(buildingId)
+        .get();
+    return (doc.data()?['postal_code'] as String? ?? '').trim();
   }
 
   // Get real name from firestore
@@ -144,7 +187,9 @@ class _MainShellState extends State<MainShell> {
             userId: _userId,
             userName: _userName,
             buildingId: _buildingId ?? '',
+            zipCode: _zipCode,
             isManagement: _isManagement,
+            isVerified: _isVerified,
             user: widget.user,
           ),
           const PersonalCalendarPage(),
@@ -152,7 +197,9 @@ class _MainShellState extends State<MainShell> {
             userId: _userId,
             userName: _userName,
             buildingId: _buildingId ?? '',
+            zipCode: _zipCode,
             isManagement: _isManagement,
+            isVerified: _isVerified,
           ),
           _SettingsScreen(user: widget.user),
         ],
@@ -171,14 +218,18 @@ class _DashboardScreen extends StatelessWidget {
   final String userId;
   final String userName;
   final String buildingId;
+  final String zipCode;
   final bool isManagement;
+  final bool isVerified;
   final User user;
 
   const _DashboardScreen({
     required this.userId,
     required this.userName,
     required this.buildingId,
+    required this.zipCode,
     required this.isManagement,
+    required this.isVerified,
     required this.user,
   });
 
@@ -392,17 +443,23 @@ class _ForumsLandingScreen extends StatelessWidget {
   final String userId;
   final String userName;
   final String buildingId;
+  final String zipCode;
   final bool isManagement;
+  final bool isVerified;
 
   const _ForumsLandingScreen({
     required this.userId,
     required this.userName,
     required this.buildingId,
+    required this.zipCode,
     required this.isManagement,
+    required this.isVerified,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasBuildingRequest = buildingId.trim().isNotEmpty;
+    final hasZipContext = zipCode.trim().isNotEmpty;
     return Scaffold(
       backgroundColor: FlockColors.cream,
       body: SafeArea(
@@ -434,23 +491,58 @@ class _ForumsLandingScreen extends StatelessWidget {
               // Building forum — active
               _ForumTile(
                 label: 'From your building',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ForumFeedScreen(
-                      buildingId: buildingId,
-                      currentUserId: userId,
-                      currentUserName: userName,
-                      isManagement: isManagement,
-                    ),
-                  ),
-                ),
+                onTap: isVerified
+                    ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ForumFeedScreen(
+                            buildingId: buildingId,
+                            currentUserId: userId,
+                            currentUserName: userName,
+                            isManagement: isManagement,
+                          ),
+                        ),
+                      )
+                    : () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Only verified residents and staff can use building forums.',
+                          ),
+                        ),
+                      ),
               ),
 
               const SizedBox(height: 16),
 
-              // Zip code forum — coming soon
-              const _ForumTile(label: 'From your zip code', onTap: null),
+              _ForumTile(
+                label: 'From your zip code',
+                onTap: hasBuildingRequest && hasZipContext
+                    ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ForumFeedScreen(
+                            buildingId: buildingId,
+                            forumType: ForumType.neighborhood,
+                            forumKey: zipCode,
+                            currentUserId: userId,
+                            currentUserName: userName,
+                            isManagement: isManagement,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              if (!hasBuildingRequest || !hasZipContext)
+                const Padding(
+                  padding: EdgeInsets.only(top: 10),
+                  child: Text(
+                    'Zip code forum unlocks once you request to join a building.',
+                    style: TextStyle(
+                      color: FlockColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -496,6 +588,28 @@ class _ForumTile extends StatelessWidget {
                 size: 20,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ForumAccessMessage extends StatelessWidget {
+  final String message;
+  const _ForumAccessMessage({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: FlockColors.textSecondary,
+            fontSize: 14,
           ),
         ),
       ),

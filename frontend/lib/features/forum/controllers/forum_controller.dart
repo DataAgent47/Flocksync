@@ -6,6 +6,10 @@ import '../../../services/forum_service.dart';
 
 class ForumController extends ChangeNotifier {
   final ForumService _service = ForumService();
+  final ForumType forumType;
+  final String forumKey;
+
+  ForumController({required this.forumType, required this.forumKey});
 
   // ─── State ─────────────────────────────────────────────────────────────────
 
@@ -22,8 +26,12 @@ class ForumController extends ChangeNotifier {
 
   // ─── Posts Stream ──────────────────────────────────────────────────────────
 
-  Stream<List<ForumPost>> postsStream(String buildingId) {
-    return _service.postsStream(buildingId, category: selectedCategory);
+  Stream<List<ForumPost>> postsStream() {
+    return _service.postsStream(
+      forumType: forumType,
+      forumKey: forumKey,
+      category: selectedCategory,
+    );
   }
 
   Stream<ForumPost?> postStream(String postId) {
@@ -54,6 +62,8 @@ class ForumController extends ChangeNotifier {
         authorId: authorId,
         authorName: authorName,
         authorAvatarUrl: authorAvatarUrl,
+        forumType: forumType,
+        forumKey: forumKey,
         buildingId: buildingId,
         title: title,
         body: body,
@@ -154,7 +164,10 @@ class ForumController extends ChangeNotifier {
   // ─── Upvote Reply ──────────────────────────────────────────────────────────
 
   Future<void> toggleReplyUpvote(
-      String postId, String replyId, String userId) async {
+    String postId,
+    String replyId,
+    String userId,
+  ) async {
     try {
       await _service.toggleReplyUpvote(postId, replyId, userId);
     } catch (e) {
