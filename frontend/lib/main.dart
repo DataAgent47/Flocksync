@@ -1,4 +1,5 @@
 // import 'package:flocksync/models/forum_post.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -72,6 +73,10 @@ class _AuthGate extends StatelessWidget {
                 body: Center(child: CircularProgressIndicator()),
               );
             }
+            // if (onboardingSnapshot.hasError) {
+            //   // Return to login if firestore fails
+            //   return const LoginScreen();
+            // }
             final completed = onboardingSnapshot.data ?? false;
             if (!completed) {
               return OnboardingScreen(user: user);
@@ -100,11 +105,13 @@ class _MainShellState extends State<MainShell> {
   String? _firstName;
   String? _buildingId;
   bool _isManagement = false;
+  // Fix permissions issues during signout
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
 
   @override
   void initState() {
     super.initState();
-    FirebaseFirestore.instance
+    _userSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(widget.user.uid)
         .snapshots()
@@ -123,7 +130,15 @@ class _MainShellState extends State<MainShell> {
 
             _isManagement = (data['role'] as String?) == 'manager';
           });
+        }, onError: (error) {
+          // Silent Clear permissions errors
         });
+  }
+
+  @override
+  void dispose() {
+    _userSubscription?.cancel();
+    super.dispose();
   }
 
   // Get real name from firestore
@@ -148,7 +163,11 @@ class _MainShellState extends State<MainShell> {
             isManagement: _isManagement,
             user: widget.user,
           ),
-          const UsersScreen(),
+          _UsersScreen(
+            userId: _userId,
+            buildingId: _buildingId ?? '',
+            isManagement: _isManagement,
+          ),
           const PersonalCalendarPage(),
           _ForumsLandingScreen(
             userId: _userId,
@@ -479,6 +498,29 @@ class _ForumTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Users screen ────────────────────────────────────────────────────────────────
+
+class _UsersScreen extends StatelessWidget {
+  final String userId;
+  final String buildingId;
+  final bool isManagement;
+
+  const _UsersScreen({
+    required this.userId,
+    required this.buildingId,
+    required this.isManagement,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return UsersScreen(
+      userId: userId,
+      buildingId: buildingId,
+      isManagement: isManagement,
     );
   }
 }
