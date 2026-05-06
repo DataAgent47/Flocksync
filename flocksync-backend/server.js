@@ -25,6 +25,8 @@ const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
    .map((origin) => origin.trim())
    .filter(Boolean)
 
+//---firebase
+const db = admin.firestore()
 //--------------------SUPABASE
 // put in .env from the supabase
 // SUPABASE_URL=https://<the-long-string-of-letters-in-the-url>.supabase.co
