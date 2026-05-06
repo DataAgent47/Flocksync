@@ -84,9 +84,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     final fullName = profile == null
                         ? ''
                         : '${profile.firstName} ${profile.lastName}'.trim();
-                    final authPhotoUrl =
-                        (FirebaseAuth.instance.currentUser?.photoURL ?? '')
-                            .trim();
+                    final photoUrl = (profile?.photoUrl ??
+                        FirebaseAuth.instance.currentUser?.photoURL ??
+                        '')
+                      .trim();
 
                     return Row(
                       children: [
@@ -102,10 +103,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: CircleAvatar(
                             radius: 30,
                             backgroundColor: FlockColors.tan,
-                            backgroundImage: authPhotoUrl.isNotEmpty
-                                ? NetworkImage(authPhotoUrl)
+                            backgroundImage: photoUrl.isNotEmpty
+                              ? NetworkImage(photoUrl)
                                 : null,
-                            child: authPhotoUrl.isEmpty
+                            child: photoUrl.isEmpty
                                 ? const Icon(
                                     Icons.person,
                                     size: 30,

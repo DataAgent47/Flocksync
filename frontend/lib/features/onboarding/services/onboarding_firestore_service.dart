@@ -196,10 +196,7 @@ class OnboardingFirestoreService {
     };
 
     final authPhotoUrl = FirebaseAuth.instance.currentUser?.photoURL;
-    final authPhotoUrlLink = authPhotoUrl?.trim();
-    userPayload['photo_url'] = (authPhotoUrlLink != null)
-    ? authPhotoUrlLink
-    : "";
+    userPayload['photo_url'] = (authPhotoUrl?.trim() ?? '');
 
     if (!existingUser.exists) {
       userPayload['created_at'] = timestamp;
