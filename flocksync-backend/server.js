@@ -262,6 +262,21 @@ app.post(
                .status(400)
                .json({ error: 'User ID and document file are required.' })
          }
+
+         const userDoc = await db.collection('users').doc(userId).get()
+
+         // user exists check
+         if (!userDoc.exists) {
+            return res.status(404).json({ error: 'User not found.' })
+         }
+
+         // checks for role, only manager(change if role names change)
+         const userData = userDoc.data()
+         if (userData.role !== 'manager') {
+            return res.status(403).json({
+               error: 'Access denied. Only building managers can upload verification documents.',
+            })
+         }
          // variables for sharp
          let fileBuffer = file.buffer
          let fileExtension = file.originalname.split('.').pop()
@@ -271,7 +286,7 @@ app.post(
          if (file.mimetype.startsWith('image/')) {
             fileBuffer = await sharp(file.buffer)
                .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-               .jpeg({ quality: 80 }) // Converts to JPEG for consistent compression
+               .jpeg({ quality: 80 })
                .toBuffer()
 
             fileExtension = 'jpg'
