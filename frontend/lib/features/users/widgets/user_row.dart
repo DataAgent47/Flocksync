@@ -30,12 +30,14 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
   String? _viewFirstName;
   String? _viewLastName;
   String? _viewApartment;
+  bool? _viewRejected;
 
   // Effective verification status so that the UI updates when we verify a user
   bool get _effectiveIsVerified => _viewVerified ?? widget.user.isVerified;
   String get _effectiveFirstName => _viewFirstName ?? widget.user.firstName;
   String get _effectiveLastName => _viewLastName ?? widget.user.lastName;
   String get _effectiveApartment => _viewApartment ?? widget.user.apartmentNumber;
+  bool get _effectiveIsRejected => _viewRejected ?? widget.user.verifiedRejected;
   String get _effectiveFullName =>
       '$_effectiveFirstName $_effectiveLastName'.trim();
 
@@ -44,6 +46,9 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.user.isVerified != widget.user.isVerified) {
       _viewVerified = null;
+    }
+    if (oldWidget.user.verifiedRejected != widget.user.verifiedRejected) {
+      _viewRejected = null;
     }
     if (oldWidget.user.firstName != widget.user.firstName ||
         oldWidget.user.lastName != widget.user.lastName ||
@@ -87,7 +92,19 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
     if (confirmed != true) return;
 
     setState(() => _loading = true);
-    /// TODO implement removal of user
+    try {
+      await widget.service.removeUser(
+        userId: widget.user.userId,
+        propertyId: widget.propertyId,
+        role: widget.user.role,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _viewRejected = true;
+      });
+    } catch (_) {}
     setState(() => _loading = false);
   }
 
@@ -248,6 +265,10 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    if (_effectiveIsRejected) {
+      return const SizedBox.shrink();
+    }
+
     final isSelf = widget.user.userId == widget.currentUserId;
 
     return Padding(

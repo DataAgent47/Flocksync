@@ -8,6 +8,7 @@ class BuildingUser {
   final String? email;
   final String? phoneNumber;
   final bool isVerified;
+  final bool verifiedRejected;
   final String photoUrl;
   final String apartmentNumber;
 
@@ -20,6 +21,7 @@ class BuildingUser {
     this.email,
     this.phoneNumber,
     required this.isVerified,
+    required this.verifiedRejected,
     required this.photoUrl,
     required this.apartmentNumber,
   });

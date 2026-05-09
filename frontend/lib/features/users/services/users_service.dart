@@ -39,13 +39,12 @@ class UsersService {
           final photoUrl = (data['photo_url'] as String? ?? '').trim();
           final email = (data['contact_email'] as String? ?? '').trim();
           final phoneNumber = (data['phone'] as String? ?? '').trim();
-
-          if (firstName.isEmpty || lastName.isEmpty) {
+          final isRejected = await _fetchRejectedStatus(userId, propertyId, role);
+          final isVerified = await _fetchVerificationStatus(userId, propertyId, role);
+          if (firstName.isEmpty || lastName.isEmpty || isRejected) {
             continue;
           }
 
-          final isVerified =
-              await _fetchVerificationStatus(userId, propertyId, role);
 
           // Fetch manager role if applicable
           String? managerRole;
@@ -77,6 +76,7 @@ class UsersService {
               email: email.isEmpty ? null : email,
               phoneNumber: phoneNumber.isEmpty ? null : phoneNumber,
               isVerified: isVerified,
+              verifiedRejected: isRejected,
               photoUrl: photoUrl,
               apartmentNumber: apartmentNumber,
             ),
@@ -105,9 +105,47 @@ class UsersService {
       final docId = '${propertyId}_$userId';
       await _firestore.collection(collection).doc(docId).set({
         'is_verified': isVerified,
+        'verified_rejected': false,
       }, SetOptions(merge: true));
     } catch (e) {
       rethrow;
+    }
+  }
+
+  /// Marks a user as rejected and hides them from the list.
+  Future<void> removeUser({
+    required String userId,
+    required String propertyId,
+    required String role,
+  }) async {
+    final timestamp = FieldValue.serverTimestamp();
+    final collection = role == 'manager' ? 'managers' : 'residents';
+    final membershipDocId = '${propertyId}_$userId';
+    await _firestore.collection(collection).doc(membershipDocId).set({
+      'is_verified': false,
+      'verified_at': timestamp,
+      'verified_rejected': true,
+      'updated_at': timestamp,
+    }, SetOptions(merge: true));
+  }
+
+  Future<bool> _fetchRejectedStatus(
+    String userId,
+    String propertyId,
+    String role,
+  ) async {
+    try {
+      final collection = role == 'manager' ? 'managers' : 'residents';
+      final docId = '${propertyId}_$userId';
+      final doc = await _firestore.collection(collection).doc(docId).get();
+
+      if (!doc.exists) {
+        return false;
+      }
+
+      return doc.data()?['verified_rejected'] as bool? ?? false;
+    } catch (e) {
+      return false;
     }
   }
 
