@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 
 import '../../../core/theme/flock_theme.dart';
@@ -21,6 +20,17 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
+  static const Set<String> _supportedCountryCodes = {
+    'US',
+    'MX',
+    'GB',
+    'FR',
+    'DE',
+    'IT',
+    'ES',
+    'NL',
+  };
+
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -28,6 +38,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   final _phoneController = TextEditingController();
   PhoneNumber _phoneNumber = PhoneNumber(isoCode: 'US');
   Key _phoneInputKey = const ValueKey('profile_phone_initial');
+  // Later add a controller for the URL
+  String? _photoUrl;
 
   bool _hydrated = false;
   bool _isHydrating = false;
@@ -73,6 +85,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       _setController(_firstNameController, profile.firstName);
       _setController(_lastNameController, profile.lastName);
       _setController(_contactEmailController, profile.contactEmail);
+      _photoUrl = (profile.photoUrl).trim();
 
       final storedPhone = profile.phone.trim();
       if (storedPhone.isNotEmpty) {
@@ -84,12 +97,26 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             if (!mounted) {
               return;
             }
-            _phoneNumber = parsed;
-            _phoneInputKey = ValueKey('profile_$storedPhone');
+            final parsedIso = (parsed.isoCode ?? '').trim().toUpperCase();
+            if (_supportedCountryCodes.contains(parsedIso)) {
+              _phoneNumber = parsed;
+              _phoneInputKey = ValueKey('profile_$storedPhone');
+            } else {
+              _phoneNumber = PhoneNumber(
+                isoCode: 'US',
+                phoneNumber: storedPhone,
+              );
+              _phoneInputKey = ValueKey('profile_phone_us_fallback_$storedPhone');
+              _setController(_phoneController, storedPhone);
+            }
           } catch (_) {
+            _phoneNumber = PhoneNumber(isoCode: 'US', phoneNumber: storedPhone);
+            _phoneInputKey = ValueKey('profile_phone_parse_fallback_$storedPhone');
             _setController(_phoneController, storedPhone);
           }
         } else {
+          _phoneNumber = PhoneNumber(isoCode: 'US', phoneNumber: storedPhone);
+          _phoneInputKey = ValueKey('profile_phone_local_$storedPhone');
           _setController(_phoneController, storedPhone);
         }
       }
@@ -163,8 +190,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
-        final authPhotoUrl =
-            (FirebaseAuth.instance.currentUser?.photoURL ?? '').trim();
         return Scaffold(
           appBar: AppBar(title: const Text('Profile Settings')),
           body: _isHydrating && !_hydrated
@@ -215,10 +240,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                   child: CircleAvatar(
                                     radius: 52,
                                     backgroundColor: FlockColors.tan,
-                                    backgroundImage: authPhotoUrl.isNotEmpty
-                                        ? NetworkImage(authPhotoUrl)
+                                    backgroundImage: (_photoUrl ?? '').isNotEmpty
+                                      ? NetworkImage(_photoUrl!)
                                         : null,
-                                    child: authPhotoUrl.isEmpty
+                                    child: (_photoUrl ?? '').isEmpty
                                         ? const Icon(
                                             Icons.person,
                                             size: 52,

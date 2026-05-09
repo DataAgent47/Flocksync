@@ -1,4 +1,5 @@
 // import 'package:flocksync/models/forum_post.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,12 +13,13 @@ import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/services/onboarding_firestore_service.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/personal_calendar_page.dart';
+import 'features/users/screens/users_screen.dart';
 import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    // ── Local emulator (dev only) ──────────────────────────────────────────
+  // ── Local emulator (dev only) ──────────────────────────────────────────
   const bool kUseEmulator = bool.fromEnvironment('USE_EMULATOR');
   if (kUseEmulator) {
     FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
@@ -78,6 +80,10 @@ class _AuthGate extends StatelessWidget {
                 body: Center(child: CircularProgressIndicator()),
               );
             }
+            // if (onboardingSnapshot.hasError) {
+            //   // Return to login if firestore fails
+            //   return const LoginScreen();
+            // }
             final completed = onboardingSnapshot.data ?? false;
             if (!completed) {
               return OnboardingScreen(user: user);
@@ -102,17 +108,20 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0; // default to Dashboard
+  int _currentIndex = 0;
   String? _firstName;
   String? _buildingId;
   String _zipCode = '';
   bool _isManagement = false;
   bool _isVerified = false;
+  bool _isRejected = false;
+  // Fix permissions issues during signout
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
 
   @override
   void initState() {
     super.initState();
-    FirebaseFirestore.instance
+    _userSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(widget.user.uid)
         .snapshots()
@@ -120,28 +129,34 @@ class _MainShellState extends State<MainShell> {
           if (!mounted) return;
           final data = doc.data();
           if (data == null) return;
-          final onboardingState =
-              data['onboarding_state'] as Map<String, dynamic>?;
-          final nextBuildingId = onboardingState?['property_id'] as String?;
+
+          final buildingId = data['property_id'] as String?;
           final role = (data['role'] as String?) ?? 'resident';
+
           final verified = await _lookupVerification(
             role: role,
-            buildingId: nextBuildingId,
+            buildingId: buildingId,
           );
-          final postalCode = await _lookupPostalCode(nextBuildingId);
+          final rejected = await _lookupRejectionStatus(
+            role: role,
+            buildingId: buildingId,
+          );
+          final postalCode = await _lookupPostalCode(buildingId);
+
           setState(() {
             final name = data['first_name'] as String?;
             if (name != null && name.trim().isNotEmpty) {
               _firstName = name.trim();
             }
 
-            // get Building ID from firestore
-            _buildingId = data['property_id'] as String?;
-
+            _buildingId = buildingId;
             _isManagement = role == 'manager';
             _isVerified = verified;
+            _isRejected = rejected;
             _zipCode = postalCode;
           });
+        }, onError: (error) {
+          // Silent Clear permissions errors
         });
   }
 
@@ -159,6 +174,20 @@ class _MainShellState extends State<MainShell> {
     return (doc.data()?['is_verified'] as bool?) ?? false;
   }
 
+  Future<bool> _lookupRejectionStatus({
+    required String role,
+    required String? buildingId,
+  }) async {
+    if (buildingId == null || buildingId.trim().isEmpty) return false;
+    final collection = role == 'manager' ? 'managers' : 'residents';
+    final membershipId = '${buildingId}_${widget.user.uid}';
+    final doc = await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(membershipId)
+        .get();
+    return (doc.data()?['verified_rejected'] as bool?) ?? false;
+  }
+
   Future<String> _lookupPostalCode(String? buildingId) async {
     if (buildingId == null || buildingId.trim().isEmpty) return '';
     final doc = await FirebaseFirestore.instance
@@ -166,6 +195,12 @@ class _MainShellState extends State<MainShell> {
         .doc(buildingId)
         .get();
     return (doc.data()?['postal_code'] as String? ?? '').trim();
+  }
+
+  @override
+  void dispose() {
+    _userSubscription?.cancel();
+    super.dispose();
   }
 
   // Get real name from firestore
@@ -191,6 +226,12 @@ class _MainShellState extends State<MainShell> {
             isManagement: _isManagement,
             isVerified: _isVerified,
             user: widget.user,
+            isRejected: _isRejected,
+          ),
+          _UsersScreen(
+            userId: _userId,
+            buildingId: _buildingId ?? '',
+            isManagement: _isManagement,
           ),
           const PersonalCalendarPage(),
           _ForumsLandingScreen(
@@ -222,6 +263,7 @@ class _DashboardScreen extends StatelessWidget {
   final bool isManagement;
   final bool isVerified;
   final User user;
+  final bool isRejected;
 
   const _DashboardScreen({
     required this.userId,
@@ -231,6 +273,7 @@ class _DashboardScreen extends StatelessWidget {
     required this.isManagement,
     required this.isVerified,
     required this.user,
+    required this.isRejected,
   });
 
   /// Contains the containers and elements of the Dashboard:
@@ -257,25 +300,24 @@ class _DashboardScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: FlockColors.textPrimary
-                )
+                  color: FlockColors.textPrimary,
+                ),
               ),
-
               GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SettingsScreen(
-                      user: user,
-                      showBackButton: true,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SettingsScreen(
+                        user: user,
+                        showBackButton: true,
+                      ),
                     ),
-                  )
-                );
-              },
-              child: profileImage(),
-              )
-            ]
+                  );
+                },
+                child: profileImage(),
+              ),
+            ],
           ),
 
           const SizedBox(height: 20),
@@ -286,10 +328,16 @@ class _DashboardScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               color: FlockColors.textSecondary,
-            )
+            ),
           ),
 
-          const SizedBox(height: 20),
+          // Account rejection banner
+          if (isRejected)
+            const AnnouncementCard(
+              title: 'Account Status',
+              message: 'Your account has been rejected. Please contact management for more information or edit your details to reapply.',
+              icon: Icons.warning_outlined,
+            ),
 
           // Announces new dashboard content
           const AnnouncementCard(
@@ -300,12 +348,37 @@ class _DashboardScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
+          // Events
+          titleSection('Upcoming Events'),
+          const SizedBox(height: 10),
+
+          ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(
+              dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+              },
+            ),
+            child: SizedBox(
+              height: 180,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: 10,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (_, index) => eventCard(),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
           // Calendar
           titleSection('Calendar'),
           const SizedBox(height: 10),
           cardContainer(
-            height: 520,
-            child: PersonalCalendarPage(),
+            height: 250,
+            child: _PlaceholderScreen(label: 'Calendar'),
           ),
 
           const SizedBox(height: 20),
@@ -338,7 +411,7 @@ class _DashboardScreen extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             blurRadius: 8,
-            color: FlockColors.darkGreen
+            color: Colors.black
           )
         ],
       ),
@@ -353,6 +426,34 @@ class _DashboardScreen extends StatelessWidget {
       style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  // Event card
+  Widget eventCard() {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: FlockColors.darkGreen,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.event, color: FlockColors.cream),
+          SizedBox(height: 10),
+          Text(
+            'Event Title',
+            style: TextStyle(color: FlockColors.cream, fontWeight: FontWeight.bold),
+          ),
+          Spacer(),
+          Text(
+            'Apr 25',
+            style: TextStyle(color: FlockColors.cream),
+          ),
+        ],
       ),
     );
   }
@@ -387,7 +488,6 @@ class AnnouncementCard extends StatelessWidget {
   }
 }
 
-@override
 Widget profileImage() {
   return _HoverProfileImage();
 }
@@ -402,12 +502,9 @@ class _HoverProfileImageState extends State<_HoverProfileImage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return MouseRegion(
       onEnter: (_) => setState(() => isHovered = true),
       onExit: (_) => setState(() => isHovered = false),
-
       child: Transform.scale(
         scale: isHovered ? 1.08 : 1.0,
         child: Container(
@@ -493,23 +590,23 @@ class _ForumsLandingScreen extends StatelessWidget {
                 label: 'From your building',
                 onTap: isVerified
                     ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ForumFeedScreen(
-                            buildingId: buildingId,
-                            currentUserId: userId,
-                            currentUserName: userName,
-                            isManagement: isManagement,
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ForumFeedScreen(
+                              buildingId: buildingId,
+                              currentUserId: userId,
+                              currentUserName: userName,
+                              isManagement: isManagement,
+                            ),
                           ),
-                        ),
-                      )
+                        )
                     : () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Only verified residents and staff can use building forums.',
+                          const SnackBar(
+                            content: Text(
+                              'Only verified residents and staff can use building forums.',
+                            ),
                           ),
                         ),
-                      ),
               ),
 
               const SizedBox(height: 16),
@@ -518,18 +615,18 @@ class _ForumsLandingScreen extends StatelessWidget {
                 label: 'From your zip code',
                 onTap: hasBuildingRequest && hasZipContext
                     ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ForumFeedScreen(
-                            buildingId: buildingId,
-                            forumType: ForumType.neighborhood,
-                            forumKey: zipCode,
-                            currentUserId: userId,
-                            currentUserName: userName,
-                            isManagement: isManagement,
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ForumFeedScreen(
+                              buildingId: buildingId,
+                              forumType: ForumType.neighborhood,
+                              forumKey: zipCode,
+                              currentUserId: userId,
+                              currentUserName: userName,
+                              isManagement: isManagement,
+                            ),
                           ),
-                        ),
-                      )
+                        )
                     : null,
               ),
               if (!hasBuildingRequest || !hasZipContext)
@@ -595,24 +692,25 @@ class _ForumTile extends StatelessWidget {
   }
 }
 
-class _ForumAccessMessage extends StatelessWidget {
-  final String message;
-  const _ForumAccessMessage({required this.message});
+// ─── Users screen ────────────────────────────────────────────────────────────────
+
+class _UsersScreen extends StatelessWidget {
+  final String userId;
+  final String buildingId;
+  final bool isManagement;
+
+  const _UsersScreen({
+    required this.userId,
+    required this.buildingId,
+    required this.isManagement,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: FlockColors.textSecondary,
-            fontSize: 14,
-          ),
-        ),
-      ),
+    return UsersScreen(
+      userId: userId,
+      buildingId: buildingId,
+      isManagement: isManagement,
     );
   }
 }
@@ -655,6 +753,11 @@ class _FlockBottomNav extends StatelessWidget {
           icon: Icon(Icons.home_outlined),
           activeIcon: Icon(Icons.home),
           label: 'Dashboard',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.group_outlined),
+          activeIcon: Icon(Icons.group),
+          label: 'Users',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.calendar_today_outlined),

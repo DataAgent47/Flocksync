@@ -2,6 +2,7 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OnboardingPropertyRecord {
   const OnboardingPropertyRecord({
@@ -194,6 +195,9 @@ class OnboardingFirestoreService {
       'updated_at': timestamp,
     };
 
+    final authPhotoUrl = FirebaseAuth.instance.currentUser?.photoURL;
+    userPayload['photo_url'] = (authPhotoUrl?.trim() ?? '');
+
     if (!existingUser.exists) {
       userPayload['created_at'] = timestamp;
     }
@@ -320,6 +324,7 @@ class OnboardingFirestoreService {
       'property_id': propertyId,
       'is_verified': isVerified,
       'verified_at': isVerified ? timestamp : null,
+      'verified_rejected': false,
       'updated_at': timestamp,
     };
 
@@ -345,6 +350,7 @@ class OnboardingFirestoreService {
       'manager_role': managementRole,
       'is_verified': false,
       'verified_at': null,
+      'verified_rejected': false,
       'updated_at': timestamp,
     };
 
