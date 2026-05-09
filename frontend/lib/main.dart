@@ -8,6 +8,7 @@ import 'core/theme/flock_theme.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
+import 'models/forum_post.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
 import 'features/onboarding/services/onboarding_firestore_service.dart';
 import 'features/settings/screens/settings_screen.dart';
@@ -221,7 +222,9 @@ class _MainShellState extends State<MainShell> {
             userId: _userId,
             userName: _userName,
             buildingId: _buildingId ?? '',
+            zipCode: _zipCode,
             isManagement: _isManagement,
+            isVerified: _isVerified,
             user: widget.user,
             isRejected: _isRejected,
           ),
@@ -235,7 +238,9 @@ class _MainShellState extends State<MainShell> {
             userId: _userId,
             userName: _userName,
             buildingId: _buildingId ?? '',
+            zipCode: _zipCode,
             isManagement: _isManagement,
+            isVerified: _isVerified,
           ),
           _SettingsScreen(user: widget.user),
         ],
@@ -254,7 +259,9 @@ class _DashboardScreen extends StatelessWidget {
   final String userId;
   final String userName;
   final String buildingId;
+  final String zipCode;
   final bool isManagement;
+  final bool isVerified;
   final User user;
   final bool isRejected;
 
@@ -262,7 +269,9 @@ class _DashboardScreen extends StatelessWidget {
     required this.userId,
     required this.userName,
     required this.buildingId,
+    required this.zipCode,
     required this.isManagement,
+    required this.isVerified,
     required this.user,
     required this.isRejected,
   });
@@ -281,15 +290,37 @@ class _DashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         // Contains 'children' or elements for the Dashboard.
         children: [
-          // Primary text that writes 'Welcome!'
-          const Text(
-            'Welcome!',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: FlockColors.textPrimary
-            )
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Primary text that writes 'Welcome!'
+              const Text(
+                'Welcome!',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: FlockColors.textPrimary,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SettingsScreen(
+                        user: user,
+                        showBackButton: true,
+                      ),
+                    ),
+                  );
+                },
+                child: profileImage(),
+              ),
+            ],
           ),
+
+          const SizedBox(height: 20),
 
           // Secondary text that introduces users to FlockSync.
           const Text(
@@ -297,7 +328,7 @@ class _DashboardScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               color: FlockColors.textSecondary,
-            )
+            ),
           ),
 
           // Account rejection banner
@@ -457,23 +488,75 @@ class AnnouncementCard extends StatelessWidget {
   }
 }
 
+Widget profileImage() {
+  return _HoverProfileImage();
+}
+
+class _HoverProfileImage extends StatefulWidget {
+  @override
+  State<_HoverProfileImage> createState() => _HoverProfileImageState();
+}
+
+class _HoverProfileImageState extends State<_HoverProfileImage> {
+  bool isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => isHovered = true),
+      onExit: (_) => setState(() => isHovered = false),
+      child: Transform.scale(
+        scale: isHovered ? 1.08 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: FlockColors.darkGreen,
+          ),
+          child: CircleAvatar(
+            radius: 30,
+            backgroundColor: FlockColors.tan,
+            backgroundImage:
+                (FirebaseAuth.instance.currentUser?.photoURL?.isNotEmpty ?? false)
+                    ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
+                    : null,
+            child: (FirebaseAuth.instance.currentUser?.photoURL?.isEmpty ?? true)
+                ? const Icon(
+                    Icons.person,
+                    size: 30,
+                    color: FlockColors.darkGreen,
+                  )
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Forums landing — matches your mockup ──────────────────────────────────────
 
 class _ForumsLandingScreen extends StatelessWidget {
   final String userId;
   final String userName;
   final String buildingId;
+  final String zipCode;
   final bool isManagement;
+  final bool isVerified;
 
   const _ForumsLandingScreen({
     required this.userId,
     required this.userName,
     required this.buildingId,
+    required this.zipCode,
     required this.isManagement,
+    required this.isVerified,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasBuildingRequest = buildingId.trim().isNotEmpty;
+    final hasZipContext = zipCode.trim().isNotEmpty;
     return Scaffold(
       backgroundColor: FlockColors.cream,
       body: SafeArea(
@@ -505,23 +588,58 @@ class _ForumsLandingScreen extends StatelessWidget {
               // Building forum — active
               _ForumTile(
                 label: 'From your building',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ForumFeedScreen(
-                      buildingId: buildingId,
-                      currentUserId: userId,
-                      currentUserName: userName,
-                      isManagement: isManagement,
-                    ),
-                  ),
-                ),
+                onTap: isVerified
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ForumFeedScreen(
+                              buildingId: buildingId,
+                              currentUserId: userId,
+                              currentUserName: userName,
+                              isManagement: isManagement,
+                            ),
+                          ),
+                        )
+                    : () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Only verified residents and staff can use building forums.',
+                            ),
+                          ),
+                        ),
               ),
 
               const SizedBox(height: 16),
 
-              // Zip code forum — coming soon
-              const _ForumTile(label: 'From your zip code', onTap: null),
+              _ForumTile(
+                label: 'From your zip code',
+                onTap: hasBuildingRequest && hasZipContext
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ForumFeedScreen(
+                              buildingId: buildingId,
+                              forumType: ForumType.neighborhood,
+                              forumKey: zipCode,
+                              currentUserId: userId,
+                              currentUserName: userName,
+                              isManagement: isManagement,
+                            ),
+                          ),
+                        )
+                    : null,
+              ),
+              if (!hasBuildingRequest || !hasZipContext)
+                const Padding(
+                  padding: EdgeInsets.only(top: 10),
+                  child: Text(
+                    'Zip code forum unlocks once you request to join a building.',
+                    style: TextStyle(
+                      color: FlockColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
