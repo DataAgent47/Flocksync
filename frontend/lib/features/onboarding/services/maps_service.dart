@@ -87,7 +87,7 @@ class MapsService {
 
   static const _baseUrl = String.fromEnvironment(
     'BACKEND_API_URL',
-    defaultValue: 'http://localhost:5000',
+    defaultValue: 'http://localhost:5050',
   );
   static const _timeout = Duration(seconds: 10);
 

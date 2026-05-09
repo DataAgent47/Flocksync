@@ -17,7 +17,7 @@ const MAP_REQUEST_TIMEOUT_MS = 10000
 // Init
 dotenv.config()
 const app = express()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5050
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
    .split(',')
    .map((origin) => origin.trim())
@@ -96,22 +96,36 @@ const parseAddressResult = (result) => {
    }
 }
 const searchAddresses = async ({ query, limit = DEFAULT_MAP_RESULT_LIMIT }) => {
-   const response = await axios.get(`${MAP_BASE_URL}/search`, {
-      params: {
-         q: query,
-         format: 'jsonv2',
-         addressdetails: 1,
-         limit,
-      },
-      headers: mapHeaders,
-      timeout: MAP_REQUEST_TIMEOUT_MS,
-   })
+   try {
+      console.log(`[MAP SERVICE] Searching for: "${query}" (limit: ${limit})`)
+      const response = await axios.get(`${MAP_BASE_URL}/search`, {
+         params: {
+            q: query,
+            format: 'jsonv2',
+            addressdetails: 1,
+            limit,
+         },
+         headers: mapHeaders,
+         timeout: MAP_REQUEST_TIMEOUT_MS,
+      })
 
-   if (!Array.isArray(response.data)) {
-      throw new Error('Unexpected map service response')
+      console.log(`[MAP SERVICE] Got ${response.data?.length || 0} results`)
+
+      if (!Array.isArray(response.data)) {
+         throw new Error('Unexpected map service response format')
+      }
+
+      return response.data.map(parseAddressResult).filter(Boolean)
+   } catch (error) {
+      console.error('[MAP SERVICE] Error details:', {
+         message: error.message,
+         code: error.code,
+         status: error.response?.status,
+         statusText: error.response?.statusText,
+         url: error.config?.url,
+      })
+      throw error
    }
-
-   return response.data.map(parseAddressResult).filter(Boolean)
 }
 const clampMapResultLimit = (limit) => {
    return Math.min(Math.max(limit, 1), MAX_MAP_RESULT_LIMIT)
@@ -157,7 +171,16 @@ app.get('/api/maps/autocomplete', async (req, res) => {
 
       return res.json({ suggestions })
    } catch (error) {
-      console.error('Address autocomplete failed:', error.message)
+      console.error('[AUTOCOMPLETE ENDPOINT] Error:', error.message)
+      
+      if (error.response?.status === 429) {
+         return sendError(res, 429, 'Map service rate limited. Please try again in a moment.')
+      }
+      
+      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+         return sendError(res, 503, 'Map service is currently unavailable.')
+      }
+      
       return sendError(res, 502, 'Unable to fetch address suggestions right now.')
    }
 })
@@ -195,7 +218,16 @@ app.get('/api/maps/verify', async (req, res) => {
          },
       })
    } catch (error) {
-      console.error('Address verification failed:', error.message)
+      console.error('[VERIFY ENDPOINT] Error:', error.message)
+      
+      if (error.response?.status === 429) {
+         return sendError(res, 429, 'Map service rate limited. Please try again in a moment.')
+      }
+      
+      if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+         return sendError(res, 503, 'Map service is currently unavailable.')
+      }
+      
       return sendError(res, 502, 'Unable to verify the building address right now.')
    }
 })
