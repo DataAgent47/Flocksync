@@ -1,0 +1,228 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Auth helpers ────────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasUserDoc() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    // ── Property helpers ────────────────────────────────────────────────────
+    // Read the property_id directly from the user doc in a single get().
+    // This avoids chaining two get() calls which silently fails in Firestore rules.
+
+    function userPropertyId() {
+      return hasUserDoc() &&
+        'onboarding_state' in userDoc() &&
+        userDoc().onboarding_state is map &&
+        'property_id' in userDoc().onboarding_state &&
+        userDoc().onboarding_state.property_id is string &&
+        userDoc().onboarding_state.property_id.size() > 0
+          ? userDoc().onboarding_state.property_id
+          : '';
+    }
+
+    function hasBuildingRequest() {
+      return userPropertyId().size() > 0;
+    }
+
+    // Looks up the zip code from the property document.
+    // Only called after we know userPropertyId() is non-empty to avoid
+    // unnecessary get() calls.
+    function propertyZipCode(propertyId) {
+      return exists(/databases/$(database)/documents/properties/$(propertyId)) &&
+        'postal_code' in get(/databases/$(database)/documents/properties/$(propertyId)).data &&
+        get(/databases/$(database)/documents/properties/$(propertyId)).data.postal_code is string
+          ? get(/databases/$(database)/documents/properties/$(propertyId)).data.postal_code
+          : '';
+    }
+
+    function isValidZipCode(zip) {
+      return zip is string && zip.size() > 0 && zip.matches('^\\d{5}(-\\d{4})?$');
+    }
+
+    function normalizedZip(zip) {
+      return zip is string ? zip.trim() : '';
+    }
+
+    // ── Verification helpers ────────────────────────────────────────────────
+
+    function isVerifiedResident(propertyId) {
+      return propertyId is string &&
+        propertyId.size() > 0 &&
+        exists(/databases/$(database)/documents/residents/$(propertyId + "_" + request.auth.uid)) &&
+        get(/databases/$(database)/documents/residents/$(propertyId + "_" + request.auth.uid)).data.is_verified == true;
+    }
+
+    function isVerifiedManager(propertyId) {
+      return propertyId is string &&
+        propertyId.size() > 0 &&
+        exists(/databases/$(database)/documents/managers/$(propertyId + "_" + request.auth.uid)) &&
+        get(/databases/$(database)/documents/managers/$(propertyId + "_" + request.auth.uid)).data.is_verified == true;
+    }
+
+    function isVerifiedForProperty(propertyId) {
+      return isSignedIn() && (isVerifiedResident(propertyId) || isVerifiedManager(propertyId));
+    }
+
+    // ── Forum access logic ──────────────────────────────────────────────────
+    //
+    // Building forum: verified residents and managers of that building only.
+    //
+    // Neighborhood/zip forum:
+    //   - Unverified users: must have a building request and the post zip must
+    //     match the zip of their requested property.
+    //   - Verified users: same zip match check, but we use their verified
+    //     property_id which is already stored on their user doc.
+    //
+    // We separate the zip lookup into its own function (propertyZipCode) so
+    // Firestore only makes one get() per path — chaining get() calls inside
+    // a ternary is unreliable and was the root cause of the access bugs.
+
+    function canAccessBuildingForum(post) {
+      return 'buildingId' in post &&
+        post.buildingId is string &&
+        post.buildingId.size() > 0 &&
+        post.forumType == 'building' &&
+        isVerifiedForProperty(post.buildingId);
+    }
+
+    function canAccessNeighborhoodForum(post) {
+      let propId = userPropertyId();
+      let postZip = 'zipCode' in post && post.zipCode is string
+        ? normalizedZip(post.zipCode)
+        : '';
+      let userZip = propId.size() > 0
+        ? normalizedZip(propertyZipCode(propId))
+        : '';
+
+      return hasBuildingRequest() &&
+        postZip.size() > 0 &&
+        isValidZipCode(postZip) &&
+        userZip.size() > 0 &&
+        isValidZipCode(userZip) &&
+        postZip == userZip;
+    }
+
+    function canAccessPost(post) {
+      return post is map &&
+        'forumType' in post &&
+        post.forumType is string &&
+        (
+          (post.forumType == 'building' && canAccessBuildingForum(post)) ||
+          (post.forumType == 'neighborhood' && canAccessNeighborhoodForum(post))
+        );
+    }
+
+    // ── Users ───────────────────────────────────────────────────────────────
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create, update: if isSignedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // ── Properties ──────────────────────────────────────────────────────────
+
+    match /properties/{propertyId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if false;
+    }
+
+    // ── Residents ───────────────────────────────────────────────────────────
+
+    match /residents/{residentDocId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.resource.data.resident_id == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ── Managers ────────────────────────────────────────────────────────────
+
+    match /managers/{managerDocId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() &&
+        request.resource.data.manager_id == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ── Forum posts ─────────────────────────────────────────────────────────
+
+    match /forum_posts/{postId} {
+      allow read: if isSignedIn() && canAccessPost(resource.data);
+
+      allow create: if isSignedIn() &&
+        request.resource.data.authorId == request.auth.uid &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.body is string &&
+        request.resource.data.body.size() > 0 &&
+        request.resource.data.category is string &&
+        request.resource.data.forumType is string &&
+        canAccessPost(request.resource.data);
+
+      // Author can edit their own post.
+      // Verified managers can edit any post in their building.
+      allow update: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid ||
+        (
+          resource.data.forumType == 'building' &&
+          'buildingId' in resource.data &&
+          isVerifiedManager(resource.data.buildingId)
+        )
+      );
+
+      allow delete: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid ||
+        (
+          resource.data.forumType == 'building' &&
+          'buildingId' in resource.data &&
+          isVerifiedManager(resource.data.buildingId)
+        )
+      );
+
+      // ── Replies ───────────────────────────────────────────────────────────
+
+      match /replies/{replyId} {
+        allow read: if isSignedIn() &&
+          exists(/databases/$(database)/documents/forum_posts/$(postId)) &&
+          canAccessPost(
+            get(/databases/$(database)/documents/forum_posts/$(postId)).data
+          );
+
+        allow create: if isSignedIn() &&
+          request.resource.data.authorId == request.auth.uid &&
+          exists(/databases/$(database)/documents/forum_posts/$(postId)) &&
+          canAccessPost(
+            get(/databases/$(database)/documents/forum_posts/$(postId)).data
+          );
+
+        allow update: if isSignedIn() &&
+          resource.data.authorId == request.auth.uid;
+
+        allow delete: if isSignedIn() && (
+          resource.data.authorId == request.auth.uid ||
+          (
+            exists(/databases/$(database)/documents/forum_posts/$(postId)) &&
+            get(/databases/$(database)/documents/forum_posts/$(postId)).data.forumType == 'building' &&
+            'buildingId' in get(/databases/$(database)/documents/forum_posts/$(postId)).data &&
+            isVerifiedManager(
+              get(/databases/$(database)/documents/forum_posts/$(postId)).data.buildingId
+            )
+          )
+        );
+      }
+    }
+  }
+}

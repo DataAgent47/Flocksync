@@ -1,7 +1,7 @@
 # IDE - VSCode
 .vscode/*
 *.code-workspace
-
+.env
 # IDE - IntelliJ / Android Studio
 .idea/
 *.iml

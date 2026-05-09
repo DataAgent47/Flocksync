@@ -16,22 +16,37 @@ class ForumService {
 
   // ─── Posts ─────────────────────────────────────────────────────────────────
 
-  /// Stream all posts for a building, newest first. Pinned posts float to top.
-  Stream<List<ForumPost>> postsStream(String buildingId,
-      {PostCategory? category}) {
-    Query query = _posts
-        .where('buildingId', isEqualTo: buildingId)
-        .orderBy('isPinned', descending: true)
-        .orderBy('createdAt', descending: true);
-
-    if (category != null) {
-      query = query.where('category', isEqualTo: category.name);
-    }
-
-    return query.snapshots().map(
-          (snap) => snap.docs.map((d) => ForumPost.fromFirestore(d)).toList(),
-        );
+  /// Stream posts for a forum context, newest first. Pinned posts float to top.
+  /// Stream posts for a forum context, newest first. Pinned posts float to top.
+Stream<List<ForumPost>> postsStream({
+  required ForumType forumType,
+  required String forumKey,
+  PostCategory? category,
+}) {
+  Query query;
+ 
+  if (forumType == ForumType.neighborhood) {
+    query = _posts
+        .where('forumType', isEqualTo: 'neighborhood')
+        .where('zipCode', isEqualTo: forumKey);
+  } else {
+    query = _posts
+        .where('forumType', isEqualTo: 'building')
+        .where('buildingId', isEqualTo: forumKey);
   }
+ 
+  return query.snapshots().map((snap) {
+    final posts = snap.docs.map((d) => ForumPost.fromFirestore(d)).toList()
+      ..sort((a, b) {
+        if (a.isPinned != b.isPinned) {
+          return a.isPinned ? -1 : 1;
+        }
+        return b.createdAt.compareTo(a.createdAt);
+      });
+    if (category == null) return posts;
+    return posts.where((post) => post.category == category).toList();
+  });
+}
 
   /// Single post stream (for detail screen reactivity)
   Stream<ForumPost?> postStream(String postId) {
@@ -46,6 +61,8 @@ class ForumService {
     required String authorId,
     required String authorName,
     String authorAvatarUrl = '',
+    required ForumType forumType,
+    required String forumKey,
     required String buildingId,
     required String title,
     required String body,
@@ -55,22 +72,25 @@ class ForumService {
     final imageUrls = await _uploadImages(imageFiles, 'forum_posts');
 
     final ref = _posts.doc();
-    final now = DateTime.now();
-    final post = ForumPost(
-      id: ref.id,
-      authorId: authorId,
-      authorName: authorName,
-      authorAvatarUrl: authorAvatarUrl,
-      buildingId: buildingId,
-      title: title,
-      body: body,
-      category: category,
-      imageUrls: imageUrls,
-      createdAt: now,
-      updatedAt: now,
-    );
-
-    await ref.set(post.toMap());
+    await ref.set({
+      'authorId': authorId,
+      'authorName': authorName,
+      'authorAvatarUrl': authorAvatarUrl,
+      'buildingId': buildingId,
+      'forumType': forumType.name,
+      'forumKey': forumKey,
+      'zipCode': forumType == ForumType.neighborhood ? forumKey : '',
+      'title': title,
+      'body': body,
+      'content': body,
+      'category': category.name,
+      'imageUrls': imageUrls,
+      'upvotedBy': <String>[],
+      'replyCount': 0,
+      'isPinned': false,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
     return ref.id;
   }
 
@@ -111,8 +131,9 @@ class ForumService {
     return _replies(postId)
         .orderBy('createdAt', descending: false)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => ForumReply.fromFirestore(d)).toList());
+        .map(
+          (snap) => snap.docs.map((d) => ForumReply.fromFirestore(d)).toList(),
+        );
   }
 
   Future<void> createReply({
@@ -151,7 +172,10 @@ class ForumService {
   }
 
   Future<void> toggleReplyUpvote(
-      String postId, String replyId, String userId) async {
+    String postId,
+    String replyId,
+    String userId,
+  ) async {
     final ref = _replies(postId).doc(replyId);
     await _db.runTransaction((tx) async {
       final snap = await tx.get(ref);
@@ -169,13 +193,15 @@ class ForumService {
 
   Future<List<String>> _uploadImages(List<File> files, String folder) async {
     if (files.isEmpty) return [];
-    final urls = await Future.wait(files.map((file) async {
-      final name =
-          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-      final ref = _storage.ref('$folder/$name');
-      await ref.putFile(file);
-      return ref.getDownloadURL();
-    }));
+    final urls = await Future.wait(
+      files.map((file) async {
+        final name =
+            '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+        final ref = _storage.ref('$folder/$name');
+        await ref.putFile(file);
+        return ref.getDownloadURL();
+      }),
+    );
     return urls;
   }
 }

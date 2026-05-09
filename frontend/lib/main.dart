@@ -18,6 +18,12 @@ import 'dart:ui';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // ── Local emulator (dev only) ──────────────────────────────────────────
+  const bool kUseEmulator = bool.fromEnvironment('USE_EMULATOR');
+  if (kUseEmulator) {
+    FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+  }
+  // ───────────────────────────────────────────────────────────────────────
   runApp(const FlockSyncApp());
 }
 
@@ -104,7 +110,9 @@ class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
   String? _firstName;
   String? _buildingId;
+  String _zipCode = '';
   bool _isManagement = false;
+  bool _isVerified = false;
   // Fix permissions issues during signout
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
 
@@ -115,10 +123,21 @@ class _MainShellState extends State<MainShell> {
         .collection('users')
         .doc(widget.user.uid)
         .snapshots()
-        .listen((doc) {
+        .listen((doc) async {
           if (!mounted) return;
           final data = doc.data();
           if (data == null) return;
+
+          final onboardingState = data['onboarding_state'] as Map<String, dynamic>?;
+          final nextBuildingId = onboardingState?['property_id'] as String?;
+          final role = (data['role'] as String?) ?? 'resident';
+
+          final verified = await _lookupVerification(
+            role: role,
+            buildingId: nextBuildingId,
+          );
+          final postalCode = await _lookupPostalCode(nextBuildingId);
+
           setState(() {
             final name = data['first_name'] as String?;
             if (name != null && name.trim().isNotEmpty) {
@@ -128,11 +147,36 @@ class _MainShellState extends State<MainShell> {
             // get Building ID from firestore
             _buildingId = data['property_id'] as String?;
 
-            _isManagement = (data['role'] as String?) == 'manager';
+            _isManagement = role == 'manager';
+            _isVerified = verified;
+            _zipCode = postalCode;
           });
         }, onError: (error) {
           // Silent Clear permissions errors
         });
+  }
+
+  Future<bool> _lookupVerification({
+    required String role,
+    required String? buildingId,
+  }) async {
+    if (buildingId == null || buildingId.trim().isEmpty) return false;
+    final collection = role == 'manager' ? 'managers' : 'residents';
+    final membershipId = '${buildingId}_${widget.user.uid}';
+    final doc = await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(membershipId)
+        .get();
+    return (doc.data()?['is_verified'] as bool?) ?? false;
+  }
+
+  Future<String> _lookupPostalCode(String? buildingId) async {
+    if (buildingId == null || buildingId.trim().isEmpty) return '';
+    final doc = await FirebaseFirestore.instance
+        .collection('properties')
+        .doc(buildingId)
+        .get();
+    return (doc.data()?['postal_code'] as String? ?? '').trim();
   }
 
   @override

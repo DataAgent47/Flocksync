@@ -63,7 +63,7 @@ npm run dev
 - View Mongo logs:
 	`docker logs flocksync-mongodb --tail 100`
 - Test API:
-	`curl http://localhost:5000/`
+	`curl http://localhost:5050/`
 
 ### 7. Stop / reset
 

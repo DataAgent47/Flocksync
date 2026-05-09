@@ -2,12 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum PostCategory { announcement, maintenance, general, question, marketplace }
 
+enum ForumType { building, neighborhood }
+
 class ForumPost {
   final String id;
   final String authorId;
   final String authorName;
   final String authorAvatarUrl;
   final String buildingId;
+  final ForumType forumType;
+  final String forumKey;
+  final String zipCode;
   final String title;
   final String body;
   final PostCategory category;
@@ -24,6 +29,9 @@ class ForumPost {
     required this.authorName,
     this.authorAvatarUrl = '',
     required this.buildingId,
+    this.forumType = ForumType.building,
+    String? forumKey,
+    this.zipCode = '',
     required this.title,
     required this.body,
     required this.category,
@@ -33,7 +41,7 @@ class ForumPost {
     required this.createdAt,
     required this.updatedAt,
     this.isPinned = false,
-  });
+  }) : forumKey = forumKey ?? buildingId;
 
   int get upvoteCount => upvotedBy.length;
 
@@ -41,16 +49,32 @@ class ForumPost {
 
   factory ForumPost.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final rawCategory = (data['category'] ?? 'general').toString().trim();
+    final normalizedCategory = switch (rawCategory.toLowerCase()) {
+      'maintenence' => 'maintenance',
+      'announcement' => 'announcement',
+      'maintenance' => 'maintenance',
+      'general' => 'general',
+      'question' => 'question',
+      'marketplace' => 'marketplace',
+      _ => 'general',
+    };
     return ForumPost(
       id: doc.id,
-      authorId: data['authorId'] ?? '',
+      authorId: data['authorId'] ?? data['authorUid'] ?? '',
       authorName: data['authorName'] ?? 'Anonymous',
       authorAvatarUrl: data['authorAvatarUrl'] ?? '',
       buildingId: data['buildingId'] ?? '',
+      forumType: ForumType.values.firstWhere(
+        (e) => e.name == (data['forumType'] ?? 'building'),
+        orElse: () => ForumType.building,
+      ),
+      forumKey: (data['forumKey'] ?? data['buildingId'] ?? '').toString(),
+      zipCode: (data['zipCode'] ?? '').toString(),
       title: data['title'] ?? '',
-      body: data['body'] ?? '',
+      body: data['body'] ?? data['content'] ?? '',
       category: PostCategory.values.firstWhere(
-        (e) => e.name == (data['category'] ?? 'general'),
+        (e) => e.name == normalizedCategory,
         orElse: () => PostCategory.general,
       ),
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
@@ -65,11 +89,16 @@ class ForumPost {
   Map<String, dynamic> toMap() {
     return {
       'authorId': authorId,
+      'authorUid': authorId,
       'authorName': authorName,
       'authorAvatarUrl': authorAvatarUrl,
       'buildingId': buildingId,
+      'forumType': forumType.name,
+      'forumKey': forumKey,
+      'zipCode': zipCode,
       'title': title,
       'body': body,
+      'content': body,
       'category': category.name,
       'imageUrls': imageUrls,
       'upvotedBy': upvotedBy,
@@ -91,6 +120,9 @@ class ForumPost {
       authorName: authorName,
       authorAvatarUrl: authorAvatarUrl,
       buildingId: buildingId,
+      forumType: forumType,
+      forumKey: forumKey,
+      zipCode: zipCode,
       title: title,
       body: body,
       category: category,
