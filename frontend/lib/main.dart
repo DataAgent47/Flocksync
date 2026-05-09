@@ -113,6 +113,7 @@ class _MainShellState extends State<MainShell> {
   String _zipCode = '';
   bool _isManagement = false;
   bool _isVerified = false;
+  bool _isRejected = false;
   // Fix permissions issues during signout
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
 
@@ -128,15 +129,18 @@ class _MainShellState extends State<MainShell> {
           final data = doc.data();
           if (data == null) return;
 
-          final onboardingState = data['onboarding_state'] as Map<String, dynamic>?;
-          final nextBuildingId = onboardingState?['property_id'] as String?;
+          final buildingId = data['property_id'] as String?;
           final role = (data['role'] as String?) ?? 'resident';
 
           final verified = await _lookupVerification(
             role: role,
-            buildingId: nextBuildingId,
+            buildingId: buildingId,
           );
-          final postalCode = await _lookupPostalCode(nextBuildingId);
+          final rejected = await _lookupRejectionStatus(
+            role: role,
+            buildingId: buildingId,
+          );
+          final postalCode = await _lookupPostalCode(buildingId);
 
           setState(() {
             final name = data['first_name'] as String?;
@@ -144,11 +148,10 @@ class _MainShellState extends State<MainShell> {
               _firstName = name.trim();
             }
 
-            // get Building ID from firestore
-            _buildingId = data['property_id'] as String?;
-
+            _buildingId = buildingId;
             _isManagement = role == 'manager';
             _isVerified = verified;
+            _isRejected = rejected;
             _zipCode = postalCode;
           });
         }, onError: (error) {
@@ -168,6 +171,20 @@ class _MainShellState extends State<MainShell> {
         .doc(membershipId)
         .get();
     return (doc.data()?['is_verified'] as bool?) ?? false;
+  }
+
+  Future<bool> _lookupRejectionStatus({
+    required String role,
+    required String? buildingId,
+  }) async {
+    if (buildingId == null || buildingId.trim().isEmpty) return false;
+    final collection = role == 'manager' ? 'managers' : 'residents';
+    final membershipId = '${buildingId}_${widget.user.uid}';
+    final doc = await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(membershipId)
+        .get();
+    return (doc.data()?['verified_rejected'] as bool?) ?? false;
   }
 
   Future<String> _lookupPostalCode(String? buildingId) async {
@@ -206,6 +223,7 @@ class _MainShellState extends State<MainShell> {
             buildingId: _buildingId ?? '',
             isManagement: _isManagement,
             user: widget.user,
+            isRejected: _isRejected,
           ),
           _UsersScreen(
             userId: _userId,
@@ -238,6 +256,7 @@ class _DashboardScreen extends StatelessWidget {
   final String buildingId;
   final bool isManagement;
   final User user;
+  final bool isRejected;
 
   const _DashboardScreen({
     required this.userId,
@@ -245,6 +264,7 @@ class _DashboardScreen extends StatelessWidget {
     required this.buildingId,
     required this.isManagement,
     required this.user,
+    required this.isRejected,
   });
 
   /// Contains the containers and elements of the Dashboard:
@@ -279,6 +299,14 @@ class _DashboardScreen extends StatelessWidget {
               color: FlockColors.textSecondary,
             )
           ),
+
+          // Account rejection banner
+          if (isRejected)
+            const AnnouncementCard(
+              title: 'Account Status',
+              message: 'Your account has been rejected. Please contact management for more information or edit your details to reapply.',
+              icon: Icons.warning_outlined,
+            ),
 
           // Announces new dashboard content
           const AnnouncementCard(

@@ -8,6 +8,7 @@ class UserRow extends StatefulWidget {
   final String currentUserId;
   final String propertyId;
   final bool isManagement;
+  final bool showDeletedUser;
   final UsersService service;
 
   const UserRow({
@@ -16,6 +17,7 @@ class UserRow extends StatefulWidget {
     required this.currentUserId,
     required this.propertyId,
     required this.isManagement,
+    this.showDeletedUser = false,
     required this.service,
   });
 
@@ -30,16 +32,24 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
   String? _viewFirstName;
   String? _viewLastName;
   String? _viewApartment;
+  String? _viewManagerRole;
   bool? _viewRejected;
 
-  // Effective verification status so that the UI updates when we verify a user
+  static const List<String> _managerRoles = [
+    'Building Owner',
+    'Superintendant',
+    'Porter',
+    'Doorman',
+    'Building Manager',
+  ];
+
   bool get _effectiveIsVerified => _viewVerified ?? widget.user.isVerified;
+  bool get _effectiveIsRejected => _viewRejected ?? widget.user.verifiedRejected;
   String get _effectiveFirstName => _viewFirstName ?? widget.user.firstName;
   String get _effectiveLastName => _viewLastName ?? widget.user.lastName;
   String get _effectiveApartment => _viewApartment ?? widget.user.apartmentNumber;
-  bool get _effectiveIsRejected => _viewRejected ?? widget.user.verifiedRejected;
-  String get _effectiveFullName =>
-      '$_effectiveFirstName $_effectiveLastName'.trim();
+  String? get _effectiveManagerRole => _viewManagerRole ?? widget.user.managerRole;
+  String get _effectiveFullName => '$_effectiveFirstName $_effectiveLastName'.trim();
 
   @override
   void didUpdateWidget(covariant UserRow oldWidget) {
@@ -52,10 +62,12 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
     }
     if (oldWidget.user.firstName != widget.user.firstName ||
         oldWidget.user.lastName != widget.user.lastName ||
-        oldWidget.user.apartmentNumber != widget.user.apartmentNumber) {
+        oldWidget.user.apartmentNumber != widget.user.apartmentNumber ||
+        oldWidget.user.managerRole != widget.user.managerRole) {
       _viewFirstName = null;
       _viewLastName = null;
       _viewApartment = null;
+      _viewManagerRole = null;
     }
   }
 
@@ -71,6 +83,9 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
         role: widget.user.role,
         isVerified: targetVerified,
       );
+      if (!mounted) {
+        return;
+      }
       setState(() => _viewVerified = targetVerified);
     } catch (_) {}
     setState(() => _loading = false);
@@ -83,8 +98,14 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
         title: const Text('Remove user'),
         content: const Text('Are you sure you want to remove this user?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Remove')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
         ],
       ),
     );
@@ -101,8 +122,25 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
       if (!mounted) {
         return;
       }
+      setState(() => _viewRejected = true);
+    } catch (_) {}
+    setState(() => _loading = false);
+  }
+
+  Future<void> _onRestore() async {
+    setState(() => _loading = true);
+    try {
+      await widget.service.restoreUser(
+        userId: widget.user.userId,
+        propertyId: widget.propertyId,
+        role: widget.user.role,
+      );
+      if (!mounted) {
+        return;
+      }
       setState(() {
-        _viewRejected = true;
+        _viewRejected = false;
+        _viewVerified = true;
       });
     } catch (_) {}
     setState(() => _loading = false);
@@ -113,8 +151,15 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
     final firstNameController = TextEditingController(text: _effectiveFirstName);
     final lastNameController = TextEditingController(text: _effectiveLastName);
     final apartmentController = TextEditingController(text: _effectiveApartment);
+    final managerRoleController = TextEditingController(
+      text: _effectiveManagerRole ?? '',
+    );
+    String? savedFirstName;
+    String? savedLastName;
+    String? savedApartment;
+    String? savedManagerRole;
 
-    showDialog<_EditUserResult>(
+    showDialog<void>(
       context: context,
       builder: (dialogContext) {
         var isSaving = false;
@@ -138,19 +183,24 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                   firstName: firstNameController.text,
                   lastName: lastNameController.text,
                   apartmentNumber: apartmentController.text,
+                  managerRole: widget.user.role == 'manager'
+                      ? managerRoleController.text
+                      : null,
+                  role: widget.user.role,
                 );
+
+                savedFirstName = firstNameController.text.trim();
+                savedLastName = lastNameController.text.trim();
+                savedApartment = apartmentController.text.trim();
+                savedManagerRole = widget.user.role == 'manager'
+                    ? managerRoleController.text.trim()
+                    : null;
 
                 if (!dialogContext.mounted) {
                   return;
                 }
 
-                Navigator.of(dialogContext).pop(
-                  _EditUserResult(
-                    firstName: firstNameController.text.trim(),
-                    lastName: lastNameController.text.trim(),
-                    apartment: apartmentController.text.trim(),
-                  ),
-                );
+                Navigator.of(dialogContext).pop();
               } catch (e) {
                 setDialogState(() {
                   isSaving = false;
@@ -209,15 +259,46 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                           prefixIcon: Icon(Icons.home_outlined),
                         ),
                       ),
+                      if (widget.user.role == 'manager') ...[
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          initialValue:
+                              _managerRoleValue(managerRoleController.text),
+                          decoration: const InputDecoration(
+                            labelText: 'Manager Role',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                          ),
+                          items: _managerRoles
+                              .map(
+                                (role) => DropdownMenuItem<String>(
+                                  value: role,
+                                  child: Text(role),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: isSaving
+                              ? null
+                              : (value) {
+                                  setDialogState(() {
+                                    managerRoleController.text = value ?? '';
+                                  });
+                                },
+                          validator: (value) {
+                            if (widget.user.role == 'manager' &&
+                                (value ?? '').trim().isEmpty) {
+                              return 'Manager role is required.';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: isSaving
-                      ? null
-                      : () => Navigator.of(dialogContext).pop(),
+                  onPressed: isSaving ? null : () => Navigator.of(dialogContext).pop(),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
@@ -242,34 +323,44 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
           },
         );
       },
-    ).then((result) {
+    ).whenComplete(() {
       firstNameController.dispose();
       lastNameController.dispose();
       apartmentController.dispose();
-
-      if (result == null || !mounted) {
+      managerRoleController.dispose();
+    }).then((_) {
+      if (!mounted) {
         return;
       }
-
       setState(() {
-        _viewFirstName = result.firstName;
-        _viewLastName = result.lastName;
-        _viewApartment = result.apartment;
+        if (savedFirstName != null) {
+          _viewFirstName = savedFirstName;
+        }
+        if (savedLastName != null) {
+          _viewLastName = savedLastName;
+        }
+        if (savedApartment != null) {
+          _viewApartment = savedApartment;
+        }
+        if (widget.user.role == 'manager' && savedManagerRole != null) {
+          _viewManagerRole = savedManagerRole;
+        }
       });
     });
   }
 
   void _onMessage() {
-    // TODO: wire up message flow
+    // intentionally no-op for now
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_effectiveIsRejected) {
+    if (_effectiveIsRejected && !widget.showDeletedUser) {
       return const SizedBox.shrink();
     }
 
     final isSelf = widget.user.userId == widget.currentUserId;
+    final isRejectedView = widget.showDeletedUser && _effectiveIsRejected;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -280,10 +371,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
         child: Material(
           color: _effectiveIsVerified
               ? FlockColors.cardBackground
-              : Color.alphaBlend(
-                  const Color(0x26C62828),
-                  FlockColors.cardBackground,
-                ),
+              : Color.alphaBlend(const Color(0x26C62828), FlockColors.cardBackground),
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
@@ -294,9 +382,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _effectiveIsVerified
-                      ? FlockColors.divider
-                      : const Color(0xFF8B2E00),
+                  color: _effectiveIsVerified ? FlockColors.divider : const Color(0xFF8B2E00),
                 ),
               ),
               child: Column(
@@ -318,10 +404,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                   widget.user.photoUrl,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.person,
-                                      color: FlockColors.darkGreen,
-                                    );
+                                    return const Icon(Icons.person, color: FlockColors.darkGreen);
                                   },
                                 ),
                               )
@@ -351,9 +434,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _effectiveApartment.isEmpty
-                                      ? 'No apartment'
-                                      : _effectiveApartment,
+                                  _effectiveApartment.isEmpty ? 'No apartment' : _effectiveApartment,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: FlockColors.textSecondary,
@@ -364,13 +445,27 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                           ],
                         ),
                       ),
-                      if (!_effectiveIsVerified) ...[
+                      if (isRejectedView) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade900,
+                            borderRadius: BorderRadius.circular(6),
                           ),
+                          child: const Text(
+                            'Deleted',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: FlockColors.cream,
+                            ),
+                          ),
+                        ),
+                      ] else if (!_effectiveIsVerified) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
                             color: Colors.red.shade600,
                             borderRadius: BorderRadius.circular(6),
@@ -387,16 +482,16 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                       ],
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
                           color: _getRoleBadgeColor(),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          widget.user.roleLabel,
+                            widget.user.role == 'manager' &&
+                                (_effectiveManagerRole ?? '').isNotEmpty
+                              ? _effectiveManagerRole!
+                              : widget.user.roleLabel,
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -444,7 +539,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          if (widget.isManagement && !_effectiveIsVerified)
+                          if (widget.isManagement && !isRejectedView && !_effectiveIsVerified)
                             SizedBox(
                               height: 40,
                               child: ElevatedButton(
@@ -465,6 +560,27 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                     : const Text('Verify'),
                               ),
                             ),
+                          if (widget.isManagement && isRejectedView)
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                onPressed: _loading ? null : _onRestore,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: FlockColors.darkGreen,
+                                  foregroundColor: FlockColors.cream,
+                                ),
+                                child: _loading
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          color: FlockColors.cream,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text('Restore User'),
+                              ),
+                            ),
                           if (widget.isManagement)
                             SizedBox(
                               height: 40,
@@ -473,7 +589,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                 child: const Text('Edit Details'),
                               ),
                             ),
-                          if (widget.isManagement)
+                          if (widget.isManagement && !isRejectedView)
                             SizedBox(
                               height: 40,
                               child: OutlinedButton(
@@ -484,13 +600,14 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                 child: const Text('Remove User'),
                               ),
                             ),
-                          SizedBox(
-                            height: 40,
-                            child: OutlinedButton(
-                              onPressed: _loading ? null : _onMessage,
-                              child: const Text('Message User'),
+                          if (widget.isManagement || !isRejectedView)
+                            SizedBox(
+                              height: 40,
+                              child: OutlinedButton(
+                                onPressed: _loading ? null : _onMessage,
+                                child: const Text('Message User'),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ],
@@ -514,16 +631,13 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
 
     return const Color(0xFF00897B);
   }
+
+  String? _managerRoleValue(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    return _managerRoles.contains(trimmed) ? trimmed : null;
+  }
 }
 
-class _EditUserResult {
-  final String firstName;
-  final String lastName;
-  final String apartment;
-
-  const _EditUserResult({
-    required this.firstName,
-    required this.lastName,
-    required this.apartment,
-  });
-}

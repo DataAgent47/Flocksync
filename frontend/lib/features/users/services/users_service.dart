@@ -41,7 +41,7 @@ class UsersService {
           final phoneNumber = (data['phone'] as String? ?? '').trim();
           final isRejected = await _fetchRejectedStatus(userId, propertyId, role);
           final isVerified = await _fetchVerificationStatus(userId, propertyId, role);
-          if (firstName.isEmpty || lastName.isEmpty || isRejected) {
+          if (firstName.isEmpty || lastName.isEmpty) {
             continue;
           }
 
@@ -129,6 +129,41 @@ class UsersService {
     }, SetOptions(merge: true));
   }
 
+  /// Restores a rejected user and marks them verified again.
+  Future<void> restoreUser({
+    required String userId,
+    required String propertyId,
+    required String role,
+  }) async {
+    final timestamp = FieldValue.serverTimestamp();
+    final collection = role == 'manager' ? 'managers' : 'residents';
+    final membershipDocId = '${propertyId}_$userId';
+
+    final batch = _firestore.batch();
+
+    batch.set(
+      _firestore.collection('users').doc(userId),
+      {
+        'verified_rejected': false,
+        'updated_at': timestamp,
+      },
+      SetOptions(merge: true),
+    );
+
+    batch.set(
+      _firestore.collection(collection).doc(membershipDocId),
+      {
+        'is_verified': true,
+        'verified_at': timestamp,
+        'verified_rejected': false,
+        'updated_at': timestamp,
+      },
+      SetOptions(merge: true),
+    );
+
+    await batch.commit();
+  }
+
   Future<bool> _fetchRejectedStatus(
     String userId,
     String propertyId,
@@ -155,13 +190,35 @@ class UsersService {
     required String firstName,
     required String lastName,
     required String apartmentNumber,
+    String? managerRole,
+    String? role,
   }) async {
-    await _firestore.collection('users').doc(userId).set({
+    final batch = _firestore.batch();
+
+    batch.set(_firestore.collection('users').doc(userId), {
       'first_name': firstName.trim(),
       'last_name': lastName.trim(),
       'apt_number': apartmentNumber.trim(),
       'updated_at': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    if ((role ?? '').trim() == 'manager') {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final userData = userDoc.data() ?? <String, dynamic>{};
+      final propertyId = (userData['property_id'] as String? ?? '').trim();
+      if (propertyId.isNotEmpty && managerRole != null && managerRole.trim().isNotEmpty) {
+        batch.set(
+          _firestore.collection('managers').doc('${propertyId}_$userId'),
+          {
+            'manager_role': managerRole.trim(),
+            'updated_at': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+      }
+    }
+
+    await batch.commit();
   }
 
   /// Filters the users list based on the selected filter category.
@@ -170,18 +227,22 @@ class UsersService {
   List<BuildingUser> filterUsers(List<BuildingUser> users, String filter) {
     switch (filter) {
       case 'unverified':
-        return users.where((u) => !u.isVerified).toList();
+        return users
+            .where((u) => !u.isVerified && !u.verifiedRejected)
+            .toList();
       case 'residents':
         return users
-            .where((u) => u.role == 'resident' && u.isVerified)
+            .where((u) => u.role == 'resident' && u.isVerified && !u.verifiedRejected)
             .toList();
+      case 'deleted':
+        return users.where((u) => u.verifiedRejected).toList();
       case 'management':
         return users
-            .where((u) => u.role == 'manager' && u.isVerified)
+            .where((u) => u.role == 'manager' && u.isVerified && !u.verifiedRejected)
             .toList();
       case 'all':
       default:
-        return users;
+        return users.where((u) => !u.verifiedRejected).toList();
     }
   }
 

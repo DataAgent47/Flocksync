@@ -27,10 +27,11 @@ class _UsersScreenState extends State<UsersScreen> {
   late final SettingsFirestoreService _settingsService;
   String _selectedFilter = 'all';
 
-  bool get _canSeeUnverifiedFilter => widget.isManagement;
+  bool get _canSeeRestrictedFilters => widget.isManagement;
 
   void _setFilter(String filter) {
-    if (filter == 'unverified' && !_canSeeUnverifiedFilter) {
+    if ((filter == 'unverified' || filter == 'deleted') &&
+        !_canSeeRestrictedFilters) {
       return;
     }
 
@@ -89,7 +90,7 @@ class _UsersScreenState extends State<UsersScreen> {
                           isSelected: _selectedFilter == 'all',
                           onTap: () => _setFilter('all'),
                         ),
-                        if (_canSeeUnverifiedFilter) ...[
+                        if (_canSeeRestrictedFilters) ...[
                           const SizedBox(width: 8),
                           UserFilterButton(
                             label: 'Unverified',
@@ -109,6 +110,14 @@ class _UsersScreenState extends State<UsersScreen> {
                           isSelected: _selectedFilter == 'management',
                           onTap: () => _setFilter('management'),
                         ),
+                        if (_canSeeRestrictedFilters) ...[
+                          const SizedBox(width: 8),
+                          UserFilterButton(
+                            label: 'Deleted',
+                            isSelected: _selectedFilter == 'deleted',
+                            onTap: () => _setFilter('deleted'),
+                          ),
+                        ]
                       ],
                     ),
                   ),
@@ -179,8 +188,9 @@ class _UsersScreenState extends State<UsersScreen> {
                       }
 
                       final allUsers = snapshot.data ?? [];
-                      if (_selectedFilter == 'unverified' &&
-                          !_canSeeUnverifiedFilter) {
+                      if ((_selectedFilter == 'unverified' ||
+                              _selectedFilter == 'deleted') &&
+                          !_canSeeRestrictedFilters) {
                         _selectedFilter = 'all';
                       }
                       final filteredUsers = _service.filterUsers(
@@ -221,6 +231,7 @@ class _UsersScreenState extends State<UsersScreen> {
                             currentUserId: widget.userId,
                             propertyId: widget.buildingId,
                             isManagement: widget.isManagement,
+                            showDeletedUser: _selectedFilter == 'deleted',
                             service: _service,
                           );
                         },
