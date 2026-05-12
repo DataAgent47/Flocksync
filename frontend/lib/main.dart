@@ -167,6 +167,11 @@ class _MainShellState extends State<MainShell> {
 
 // ─── Dashboard — matches your mockup ──────────────────────────────────────
 // You can run 'flutter run -d web-server' to debug.
+// You can run the server and test it on another device using:
+// flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8081
+// Then join using the corresponding link:
+// http:<IPv4 Address>:8081
+
 class _DashboardScreen extends StatelessWidget {
   final String userId;
   final String userName;
