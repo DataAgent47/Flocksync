@@ -308,6 +308,7 @@ class _DashboardScreen extends StatelessWidget {
                   color: FlockColors.textPrimary,
                 ),
               ),
+
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -353,37 +354,12 @@ class _DashboardScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Events
-          titleSection('Upcoming Events'),
-          const SizedBox(height: 10),
-
-          ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(
-              dragDevices: {
-                PointerDeviceKind.touch,
-                PointerDeviceKind.mouse,
-              },
-            ),
-            child: SizedBox(
-              height: 180,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: 10,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemBuilder: (_, index) => eventCard(),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
           // Calendar
           titleSection('Calendar'),
           const SizedBox(height: 10),
           cardContainer(
-            height: 250,
-            child: _PlaceholderScreen(label: 'Calendar'),
+            height: 520,
+            child: PersonalCalendarPage(),
           ),
 
           const SizedBox(height: 20),
@@ -431,34 +407,6 @@ class _DashboardScreen extends StatelessWidget {
       style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  // Event card
-  Widget eventCard() {
-    return Container(
-      width: 140,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: FlockColors.darkGreen,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.event, color: FlockColors.cream),
-          SizedBox(height: 10),
-          Text(
-            'Event Title',
-            style: TextStyle(color: FlockColors.cream, fontWeight: FontWeight.bold),
-          ),
-          Spacer(),
-          Text(
-            'Apr 25',
-            style: TextStyle(color: FlockColors.cream),
-          ),
-        ],
       ),
     );
   }
