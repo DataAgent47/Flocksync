@@ -55,7 +55,7 @@ class ImageGrid extends StatelessWidget {
             if (isLast)
               Container(
                 decoration: BoxDecoration(
-                  color: FlockColors.darkGreen.withOpacity(0.6),
+                  color: FlockColors.darkGreen.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
