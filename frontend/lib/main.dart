@@ -230,6 +230,7 @@ class _MainShellState extends State<MainShell> {
           ),
           _UsersScreen(
             userId: _userId,
+            userName: _userName,
             buildingId: _buildingId ?? '',
             isManagement: _isManagement,
           ),
@@ -696,11 +697,13 @@ class _ForumTile extends StatelessWidget {
 
 class _UsersScreen extends StatelessWidget {
   final String userId;
+  final String userName;
   final String buildingId;
   final bool isManagement;
 
   const _UsersScreen({
     required this.userId,
+    required this.userName,
     required this.buildingId,
     required this.isManagement,
   });
@@ -709,6 +712,7 @@ class _UsersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return UsersScreen(
       userId: userId,
+      userName: userName,
       buildingId: buildingId,
       isManagement: isManagement,
     );

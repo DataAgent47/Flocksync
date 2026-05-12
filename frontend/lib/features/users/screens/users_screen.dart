@@ -8,12 +8,14 @@ import '../widgets/user_row.dart';
 
 class UsersScreen extends StatefulWidget {
   final String userId;
+  final String userName;
   final String buildingId;
   final bool isManagement;
 
   const UsersScreen({
     super.key,
     required this.userId,
+    required this.userName,
     required this.buildingId,
     required this.isManagement,
   });
@@ -229,6 +231,7 @@ class _UsersScreenState extends State<UsersScreen> {
                           return UserRow(
                             user: user,
                             currentUserId: widget.userId,
+                            currentUserName: widget.userName,
                             propertyId: widget.buildingId,
                             isManagement: widget.isManagement,
                             showDeletedUser: _selectedFilter == 'deleted',
