@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/theme/flock_theme.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/forum/screens/announcements_screen.dart';
 import 'features/forum/screens/forum_feed_screen.dart';
 import 'models/forum_post.dart';
 import 'features/onboarding/screens/onboarding_screen.dart';
@@ -14,6 +15,7 @@ import 'features/onboarding/services/onboarding_firestore_service.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/personal_calendar_page.dart';
 import 'features/users/screens/users_screen.dart';
+
 import 'dart:ui';
 
 void main() async {
@@ -259,8 +261,24 @@ class _MainShellState extends State<MainShell> {
 // flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8081
 // Then join using the corresponding link:
 // http:<IPv4 Address>:8081
+class _CategoryOption {
+  final String title;
+  final PostCategory category;
+  const _CategoryOption(this.title, this.category);
+}
+
+final ValueNotifier<PostCategory> _selectedCategory =
+    ValueNotifier(PostCategory.announcement);
 
 class _DashboardScreen extends StatelessWidget {
+  final List<_CategoryOption> _options = const [
+    _CategoryOption("Announcements", PostCategory.announcement),
+    _CategoryOption("General", PostCategory.general),
+    _CategoryOption("Maintenance", PostCategory.maintenance),
+    _CategoryOption("Marketplace", PostCategory.marketplace),
+    _CategoryOption("Question", PostCategory.question),
+  ];
+  
   final String userId;
   final String userName;
   final String buildingId;
@@ -281,6 +299,20 @@ class _DashboardScreen extends StatelessWidget {
     required this.isRejected,
   });
 
+  PostCategory _next(PostCategory current) {
+    final i = _options.indexWhere((o) => o.category == current);
+    return _options[(i + 1) % _options.length].category;
+  }
+
+  PostCategory _prev(PostCategory current) {
+    final i = _options.indexWhere((o) => o.category == current);
+    return _options[(i - 1 + _options.length) % _options.length].category;
+  }
+
+  String _label(PostCategory c) {
+    return _options.firstWhere((o) => o.category == c).title;
+  }
+  
   /// Contains the containers and elements of the Dashboard:
   ///  - Building Announcements
   ///  - Upcoming Events
@@ -337,6 +369,8 @@ class _DashboardScreen extends StatelessWidget {
             ),
           ),
 
+          const SizedBox(height: 10),
+
           // Account rejection banner
           if (isRejected)
             const AnnouncementCard(
@@ -353,15 +387,80 @@ class _DashboardScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 20),
+          
+          ValueListenableBuilder<PostCategory>(
+            valueListenable: _selectedCategory,
+            builder: (context, selected, _) {
+              final label = _label(selected);
 
-          // Calendar
-          titleSection('Calendar'),
-          const SizedBox(height: 10),
-          cardContainer(
-            height: 520,
-            child: PersonalCalendarPage(),
+              return Container(
+                decoration: BoxDecoration(
+                  color: FlockColors.cream,
+                  borderRadius: BorderRadius.circular(36),
+                  boxShadow: [
+                    BoxShadow(
+                      blurRadius: 8,
+                      color: Colors.black
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+
+                    _ArrowButton(
+                      icon: Icons.chevron_left,
+                      onTap: () => _selectedCategory.value =
+                          _prev(_selectedCategory.value),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(24),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AnnouncementsScreen(
+                                buildingId: buildingId,
+                                forumType: ForumType.building,
+                                forumKey: buildingId,
+                                currentUserId: userId,
+                                currentUserName: userName,
+                                category: selected,
+                                title: label,
+                                currentUserAvatarUrl: '',
+                                isManagement: isManagement,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            label,
+                            textAlign: TextAlign.center
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    _ArrowButton(
+                      icon: Icons.chevron_right,
+                      onTap: () => _selectedCategory.value = _next(_selectedCategory.value),
+                    ),
+
+                    const SizedBox(width: 16),
+                  ],
+                ),
+              );
+            },
           ),
-
+          
           const SizedBox(height: 20),
 
           // Forum
@@ -436,6 +535,32 @@ class AnnouncementCard extends StatelessWidget {
           )
         ),
         subtitle: Text(message)
+      ),
+    );
+  }
+}
+
+class _ArrowButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ArrowButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: FlockColors.buttonBackground,
+        ),
+        child: Icon(icon, size: 20),
       ),
     );
   }
