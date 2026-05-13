@@ -97,7 +97,6 @@ class AddEventModal extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            /// ✅ REQUEST MAINTENANCE (WITH NAVBAR)
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.green2,
@@ -110,7 +109,7 @@ class AddEventModal extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        const MainShell(initialIndex: 2), // ✅ KEY FIX
+                        const MainShell(initialIndex: 2), 
                   ),
                 );
               },
