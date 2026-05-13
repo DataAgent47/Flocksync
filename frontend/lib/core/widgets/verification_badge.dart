@@ -77,22 +77,22 @@ class VerificationBadge extends StatelessWidget {
     if (isVerified && isManagementRole) {
       // Verified management — dark green, stands out
       return _BadgeColors(
-        background: FlockColors.darkGreen.withOpacity(0.1),
-        border: FlockColors.darkGreen.withOpacity(0.4),
+        background: FlockColors.darkGreen.withValues(alpha: 0.1),
+        border: FlockColors.darkGreen.withValues(alpha: 0.4),
         foreground: FlockColors.darkGreen,
       );
     }
     if (isVerified) {
       // Verified resident — mid green
       return _BadgeColors(
-        background: FlockColors.midGreen.withOpacity(0.12),
-        border: FlockColors.midGreen.withOpacity(0.4),
+        background: FlockColors.midGreen.withValues(alpha: 0.12),
+        border: FlockColors.midGreen.withValues(alpha: 0.4),
         foreground: FlockColors.midGreen,
       );
     }
     // Unverified — muted tan, doesn't compete with content
     return _BadgeColors(
-      background: FlockColors.tan.withOpacity(0.2),
+      background: FlockColors.tan.withValues(alpha: 0.2),
       border: FlockColors.tan,
       foreground: FlockColors.textMuted,
     );

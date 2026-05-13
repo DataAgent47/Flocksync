@@ -100,16 +100,17 @@ class _AuthGate extends StatelessWidget {
 // ─── Main shell with bottom nav ────────────────────────────────────────────────
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key, required this.user});
+  const MainShell({super.key, required this.user, this.initialIndex = 0});
 
   final User user;
+  final int initialIndex;
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
+  late int _currentIndex;
   String? _firstName;
   String? _buildingId;
   String _zipCode = '';
@@ -122,6 +123,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex;
     _userSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(widget.user.uid)

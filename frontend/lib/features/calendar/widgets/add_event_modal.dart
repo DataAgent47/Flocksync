@@ -86,7 +86,7 @@ class AddEventModal extends StatelessWidget {
                     Navigator.pop(context);
                   }
                 } catch (e) {
-                  print("ERROR SAVING EVENT: $e");
+                  // print("ERROR SAVING EVENT: $e");
                 }
               },
               child: const Text(
@@ -109,7 +109,7 @@ class AddEventModal extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        const MainShell(initialIndex: 2), 
+                        MainShell(user: user!, initialIndex: 2),
                   ),
                 );
               },

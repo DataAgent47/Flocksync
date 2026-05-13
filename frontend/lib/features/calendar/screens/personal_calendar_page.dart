@@ -299,7 +299,7 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                                         .delete();
 
                                     await loadEvents();
-                                    if (!mounted) return;
+                                    if (!mounted || !context.mounted) return;
                                     Navigator.pop(context);
                                   },
                                   child: const Text("Delete"),
@@ -418,7 +418,7 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                     });
 
                     await loadEvents();
-                    if (!mounted) return;
+                    if (!mounted || !context.mounted) return;
                     Navigator.pop(context);
                   },
                   child: const Text("Save Changes"),
