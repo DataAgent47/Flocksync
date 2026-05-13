@@ -16,8 +16,6 @@ import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/personal_calendar_page.dart';
 import 'features/users/screens/users_screen.dart';
 
-import 'dart:ui';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -232,6 +230,7 @@ class _MainShellState extends State<MainShell> {
           ),
           _UsersScreen(
             userId: _userId,
+            userName: _userName,
             buildingId: _buildingId ?? '',
             isManagement: _isManagement,
           ),
@@ -313,11 +312,6 @@ class _DashboardScreen extends StatelessWidget {
     return _options.firstWhere((o) => o.category == c).title;
   }
   
-  /// Contains the containers and elements of the Dashboard:
-  ///  - Building Announcements
-  ///  - Upcoming Events
-  ///  - Calendar
-  ///  - Forum Activity
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -464,16 +458,11 @@ class _DashboardScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Forum
-          titleSection('Forum Activity'),
+          titleSection('Calendar'),
           const SizedBox(height: 10),
           cardContainer(
             height: 520,
-            child: ForumFeedScreen(
-              buildingId: buildingId,
-              currentUserId: userId,
-              currentUserName: userName,
-              isManagement: isManagement,
-            ),
+            child: PersonalCalendarPage()
           ),
         ],
       ),
@@ -774,19 +763,22 @@ class _ForumTile extends StatelessWidget {
 
 class _UsersScreen extends StatelessWidget {
   final String userId;
+  final String userName;
   final String buildingId;
   final bool isManagement;
 
   const _UsersScreen({
     required this.userId,
+    required this.userName,
     required this.buildingId,
     required this.isManagement,
   });
 
   @override
   Widget build(BuildContext context) {
-    return UsersScreen(
+    return _UsersScreen(
       userId: userId,
+      userName: userName,
       buildingId: buildingId,
       isManagement: isManagement,
     );
@@ -859,6 +851,7 @@ class _FlockBottomNav extends StatelessWidget {
 
 // ─── Placeholder for unbuilt tabs ──────────────────────────────────────────────
 
+// ignore: unused_element
 class _PlaceholderScreen extends StatelessWidget {
   final String label;
   const _PlaceholderScreen({required this.label});
