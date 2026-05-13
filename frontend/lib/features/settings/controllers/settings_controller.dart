@@ -85,6 +85,18 @@ class SettingsController extends ChangeNotifier {
     });
   }
 
+  Future<bool> setHideApartmentNumber({
+    required String uid,
+    required bool hide,
+  }) async {
+    return _runAction(() async {
+      await _firestoreService.updateHideApartmentNumber(uid: uid, hide: hide);
+      successMessage = hide
+          ? 'Apartment number is now hidden.'
+          : 'Apartment number is no longer hidden to other residents.';
+    });
+  }
+
   Future<bool> changeLoginEmail({
     required String uid,
     required String newEmail,

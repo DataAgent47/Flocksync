@@ -36,6 +36,7 @@ class UsersService {
           final firstName = (data['first_name'] as String? ?? '').trim();
           final lastName = (data['last_name'] as String? ?? '').trim();
           final apartmentNumber = (data['apt_number'] as String? ?? '').trim();
+          final hideApartmentNumber = (data['hide_apt_number'] as bool? ?? false);
           final photoUrl = (data['photo_url'] as String? ?? '').trim();
           final email = (data['contact_email'] as String? ?? '').trim();
           final phoneNumber = (data['phone'] as String? ?? '').trim();
@@ -79,6 +80,7 @@ class UsersService {
               verifiedRejected: isRejected,
               photoUrl: photoUrl,
               apartmentNumber: apartmentNumber,
+              hideApartmentNumber: hideApartmentNumber,
             ),
           );
         }

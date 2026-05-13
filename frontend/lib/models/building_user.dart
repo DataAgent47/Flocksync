@@ -11,6 +11,7 @@ class BuildingUser {
   final bool verifiedRejected;
   final String photoUrl;
   final String apartmentNumber;
+  final bool hideApartmentNumber;
 
   const BuildingUser({
     required this.userId,
@@ -24,6 +25,7 @@ class BuildingUser {
     required this.verifiedRejected,
     required this.photoUrl,
     required this.apartmentNumber,
+    required this.hideApartmentNumber,
   });
 
   String get fullName => '$firstName $lastName'.trim();

@@ -444,13 +444,26 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                   color: FlockColors.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  _effectiveApartment.isEmpty ? 'No apartment' : _effectiveApartment,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: FlockColors.textSecondary,
-                                  ),
-                                ),
+                                Builder(builder: (ctx) {
+                                  final isSelf = widget.user.userId == widget.currentUserId;
+                                  final apartment = _effectiveApartment;
+                                  String label;
+                                  if (apartment.isEmpty) {
+                                    label = 'No apartment';
+                                  } else if (isSelf || widget.isManagement || !widget.user.hideApartmentNumber) {
+                                    label = apartment;
+                                  } else {
+                                    label = 'Hidden';
+                                  }
+
+                                  return Text(
+                                    label,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: FlockColors.textSecondary,
+                                    ),
+                                  );
+                                }),
                               ],
                             ),
                           ],
