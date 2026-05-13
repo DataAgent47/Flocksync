@@ -863,6 +863,7 @@ class _FlockBottomNav extends StatelessWidget {
 
 // ─── Placeholder for unbuilt tabs ──────────────────────────────────────────────
 
+// ignore: unused_element
 class _PlaceholderScreen extends StatelessWidget {
   final String label;
   const _PlaceholderScreen({required this.label});
