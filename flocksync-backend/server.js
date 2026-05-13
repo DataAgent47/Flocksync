@@ -20,7 +20,7 @@ const MAP_REQUEST_TIMEOUT_MS = 10000
 // Init
 dotenv.config()
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 5000
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
    .split(',')
    .map((origin) => origin.trim())
@@ -304,8 +304,8 @@ app.post(
 
          const { data, error: uploadError } = await supabase.storage
             .from('verification-documents')
-            .upload(fileName, file.buffer, {
-               contentType: file.mimetype,
+            .upload(fileName, fileBuffer, {
+               contentType: contentType,
                upsert: true,
             })
 
@@ -362,33 +362,57 @@ app.get('/api/manager/view-document/:userId', async (req, res) => {
    res.json({ url: data.signedUrl })
 })
 
-//deletion path for testing
-app.delete('/api/user/delete-verification', async (req, res) => {
-   const { userId, storagePath } = req.body
-
-   if (!userId || !storagePath) {
-      return res.status(400).json({ error: 'Missing userId or storagePath' })
-   }
+// more admin stuff temp using manager
+app.patch('/api/manager/verify-user', async (req, res) => {
+   // decision should be 'approved' or 'rejected'
+   const { userId, decision, adminNotes } = req.body
 
    try {
-      const { data, error: storageError } = await supabase.storage
-         .from('verification-documents')
-         .remove([storagePath])
+      const status = decision === 'approved' ? 'verified' : 'rejected'
 
-      if (storageError) throw storageError
+      await db
+         .collection('users')
+         .doc(userId)
+         .update({
+            'verification.status': status,
+            'verification.reviewed_at':
+               admin.firestore.FieldValue.serverTimestamp(),
+            'verification.admin_notes': adminNotes || '',
+         })
 
-      await db.collection('users').doc(userId).update({
-         verification: admin.firestore.FieldValue.delete(),
-      })
-
-      res.json({
-         success: true,
-         message: 'Test image and metadata deleted successfully',
-      })
+      res.json({ success: true, message: `User status updated to ${status}` })
    } catch (error) {
-      console.error('Delete error:', error.message)
       res.status(500).json({ error: error.message })
    }
 })
+
+//deletion path for testing
+// app.delete('/api/user/delete-verification', async (req, res) => {
+//    const { userId, storagePath } = req.body
+
+//    if (!userId || !storagePath) {
+//       return res.status(400).json({ error: 'Missing userId or storagePath' })
+//    }
+
+//    try {
+//       const { data, error: storageError } = await supabase.storage
+//          .from('verification-documents')
+//          .remove([storagePath])
+
+//       if (storageError) throw storageError
+
+//       await db.collection('users').doc(userId).update({
+//          verification: admin.firestore.FieldValue.delete(),
+//       })
+
+//       res.json({
+//          success: true,
+//          message: 'Test image and metadata deleted successfully',
+//       })
+//    } catch (error) {
+//       console.error('Delete error:', error.message)
+//       res.status(500).json({ error: error.message })
+//    }
+// })
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
