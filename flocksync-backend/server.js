@@ -324,7 +324,7 @@ app.post(
             .doc(userId)
             .set(
                {
-                  verification: {
+                  owner_verification: {
                      storage_path: fileName,
                      status: 'pending',
                      submitted_at: admin.firestore.FieldValue.serverTimestamp(),
@@ -351,7 +351,7 @@ app.post(
 app.get('/api/manager/view-document/:userId', async (req, res) => {
    // get the path from firestore that was storing during verification upload
    const userDoc = await db.collection('users').doc(req.params.userId).get()
-   const path = userDoc.data()?.verification?.storage_path
+   const path = userDoc.data()?.owner_verification?.storage_path
 
    if (!path) return res.status(404).send('No document found')
 
@@ -374,10 +374,10 @@ app.patch('/api/manager/verify-user', async (req, res) => {
          .collection('users')
          .doc(userId)
          .update({
-            'verification.status': status,
-            'verification.reviewed_at':
+            'owner_verification.status': status,
+            'owner_verification.reviewed_at':
                admin.firestore.FieldValue.serverTimestamp(),
-            'verification.admin_notes': adminNotes || '',
+            'owner_verification.admin_notes': adminNotes || '',
          })
 
       res.json({ success: true, message: `User status updated to ${status}` })
@@ -386,7 +386,30 @@ app.patch('/api/manager/verify-user', async (req, res) => {
    }
 })
 
+//create a default field for user if they select manager -> building owner to add a verification status
+// again change manager to admin later
+app.get('/api/manager/pending-verifications', async (req, res) => {
+   try {
+      const snapshot = await db
+         .collection('users')
+         .where('owner_verification.status', '==', 'pending')
+         .orderBy('owner_verification.submitted_at', 'asc')
+         .get()
+
+      const pending = snapshot.docs.map((doc) => ({
+         id: doc.id,
+         ...doc.data().verification,
+         displayName: doc.data().displayName,
+      }))
+
+      res.json(pending)
+   } catch (error) {
+      res.status(500).json({ error: error.message })
+   }
+})
+
 //deletion path for testing
+// just using manual delete in supabase console right now
 // app.delete('/api/user/delete-verification', async (req, res) => {
 //    const { userId, storagePath } = req.body
 
