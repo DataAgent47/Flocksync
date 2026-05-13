@@ -20,7 +20,7 @@ const MAP_REQUEST_TIMEOUT_MS = 10000
 // Init
 dotenv.config()
 const app = express()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5050
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
    .split(',')
    .map((origin) => origin.trim())
