@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/theme/flock_theme.dart';
+import 'core/widgets/settings_tile.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/forum/screens/announcements_screen.dart';
@@ -683,7 +684,7 @@ class _ForumsLandingScreen extends StatelessWidget {
       backgroundColor: FlockColors.cream,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -705,108 +706,79 @@ class _ForumsLandingScreen extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 48),
-
-              // Building forum — active
-              _ForumTile(
-                label: 'From your building',
-                onTap: isVerified
-                    ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ForumFeedScreen(
-                            buildingId: buildingId,
-                            currentUserId: userId,
-                            currentUserName: userName,
-                            isManagement: isManagement,
-                            isVerified: isVerified,
-                          ),
-                        ),
-                      )
-                    : () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Only verified residents and staff can use building forums.',
-                            ),
-                          ),
-                        ),
-              ),
-
-              const SizedBox(height: 16),
-
-              _ForumTile(
-                label: 'From your zip code',
-                onTap: hasBuildingRequest && hasZipContext
-                    ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ForumFeedScreen(
-                            buildingId: buildingId,
-                            forumType: ForumType.neighborhood,
-                            forumKey: zipCode,
-                            currentUserId: userId,
-                            currentUserName: userName,
-                            isManagement: isManagement,
-                            isVerified: isVerified,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-              if (!hasBuildingRequest || !hasZipContext)
-                const Padding(
-                  padding: EdgeInsets.only(top: 10),
-                  child: Text(
-                    'Zip code forum unlocks once you request to join a building.',
-                    style: TextStyle(
-                      color: FlockColors.textSecondary,
-                      fontSize: 13,
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Same Card + ListTile pattern as Settings (Profile, Building, Security).
+                    SettingsTile(
+                      title: 'From your building',
+                      subtitle:
+                          'Posts from residents and staff in your building.',
+                      leadingIcon: Icons.apartment_outlined,
+                      onTap: isVerified
+                          ? () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ForumFeedScreen(
+                                    buildingId: buildingId,
+                                    currentUserId: userId,
+                                    currentUserName: userName,
+                                    isManagement: isManagement,
+                                    isVerified: isVerified,
+                                  ),
+                                ),
+                              )
+                          : () => ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Only verified residents and staff can use building forums.',
+                                  ),
+                                ),
+                              ),
                     ),
-                  ),
+                    AnimatedOpacity(
+                      opacity: hasBuildingRequest && hasZipContext
+                          ? 1
+                          : 0.45,
+                      duration: const Duration(milliseconds: 150),
+                      child: SettingsTile(
+                        title: 'From your zip code',
+                        subtitle:
+                            'Posts from neighbors in the same zip code area.',
+                        leadingIcon: Icons.map_outlined,
+                        onTap: hasBuildingRequest && hasZipContext
+                            ? () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ForumFeedScreen(
+                                      buildingId: buildingId,
+                                      forumType: ForumType.neighborhood,
+                                      forumKey: zipCode,
+                                      currentUserId: userId,
+                                      currentUserName: userName,
+                                      isManagement: isManagement,
+                                      isVerified: isVerified,
+                                    ),
+                                  ),
+                                )
+                            : null,
+                      ),
+                    ),
+                    if (!hasBuildingRequest || !hasZipContext)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 10),
+                        child: Text(
+                          'Zip code forum unlocks once you request to join a building.',
+                          style: TextStyle(
+                            color: FlockColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumTile extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-
-  const _ForumTile({required this.label, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedOpacity(
-        opacity: onTap == null ? 0.45 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          decoration: BoxDecoration(
-            color: FlockColors.tan,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: FlockColors.darkGreen,
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward,
-                color: FlockColors.darkGreen,
-                size: 20,
               ),
             ],
           ),
