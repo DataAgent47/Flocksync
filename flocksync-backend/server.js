@@ -18,20 +18,13 @@ const MAX_MAP_RESULT_LIMIT = 10
 const MAP_REQUEST_TIMEOUT_MS = 10000
 
 // Init
+dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 5000
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
    .split(',')
    .map((origin) => origin.trim())
    .filter(Boolean)
-
-// multer memory storage(cloud)
-// 10mb limit
-// use for the verification documents
-const upload = multer({
-   storage: multer.memoryStorage(),
-   limits: { fileSize: 10 * 1024 * 1024 },
-})
 
 const isLocalDevOrigin = (origin) => {
    try {
@@ -266,7 +259,7 @@ app.get('/api/maps/verify', async (req, res) => {
    }
 })
 
-// profile picture route
+//--------------------------- profile picture route
 // for all profile picture uploads
 // dont need get request since this is stored publically, just call photo_url on the front
 app.post('/api/user/update-profile-picture', async (req, res) => {
@@ -286,7 +279,7 @@ app.post('/api/user/update-profile-picture', async (req, res) => {
       res.status(500).json({ error: error.message })
    }
 })
-
+//----------------------------------verification documents(not resident verification)
 // verification docs using supabase cloud storage 0.5gb limit
 app.post(
    '/api/user/upload-verification',
