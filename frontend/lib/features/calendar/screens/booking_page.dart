@@ -1,3 +1,5 @@
+import 'dart:convert'; 
+import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flocksync/core/theme/flock_theme.dart';
@@ -31,24 +33,24 @@ class _BookingPageState extends State<BookingPage> {
 
   bool _isSubmitting = false;
 
-  // Pick image (preview only)
+  // Pick image (ensures bytes exist for Base64)
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
 
     if (picked != null) {
-      if (kIsWeb) {
-        _imageBytes = await picked.readAsBytes();
-      }
+      final bytes = await picked.readAsBytes(); 
 
       if (!mounted) return;
 
       setState(() {
         _imageFile = picked;
+        _imageBytes = bytes; 
       });
     }
   }
 
+  // Submit with Base64 instead of Firebase Storage
   Future<void> _submit() async {
     if (selectedCategory == null ||
         selectedUrgency == null ||
@@ -66,17 +68,22 @@ class _BookingPageState extends State<BookingPage> {
         "${widget.date.year}-${widget.date.month}-${widget.date.day}";
 
     try {
-      // No upload (keep null placeholder)
-      final imageUrl = null;
+      String? base64Image;
+
+      // Convert image to Base64 if exists
+      if (_imageBytes != null) {
+        base64Image = base64Encode(_imageBytes!);
+      }
 
       await FirebaseFirestore.instance.collection('bookings').add({
+        "userId": FirebaseAuth.instance.currentUser?.uid ?? "anonymous",
         "date": dateKey,
         "slot": widget.slot,
         "category": selectedCategory,
         "urgency": selectedUrgency,
         "entryPermission": entryPermission,
         "description": descriptionController.text,
-        "imageUrl": imageUrl,
+        "imageBase64": base64Image, 
         "createdAt": FieldValue.serverTimestamp(),
       });
 
@@ -215,9 +222,9 @@ class _BookingPageState extends State<BookingPage> {
                       )
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: kIsWeb
+                        child: _imageBytes != null
                             ? Image.memory(_imageBytes!, fit: BoxFit.cover)
-                            : Image.network(_imageFile!.path, fit: BoxFit.cover),
+                            : const SizedBox(),
                       ),
               ),
             ),
