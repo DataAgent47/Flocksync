@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flocksync/core/theme/flock_theme.dart';
 import '../screens/maintenance_page.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 class PersonalCalendarPage extends StatefulWidget {
   const PersonalCalendarPage({super.key});
 
@@ -10,10 +13,20 @@ class PersonalCalendarPage extends StatefulWidget {
 }
 
 class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
-
   DateTime currentMonth = DateTime.now();
   Map<String, List<Map<String, String>>> events = {};
 
+  @override
+  void initState() {
+    super.initState();
+
+    loadEvents().then((loaded) {
+      setState(() {
+        events = loaded;
+      });
+    });
+  }
+  
   String monthName(int month) {
     const months = [
       "January","February","March","April",
@@ -239,6 +252,12 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
   }
 
   void _openDayModal(DateTime day) {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final eventsRef = FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('events');
+
     TextEditingController titleController = TextEditingController();
     TextEditingController descriptionController = TextEditingController();
     TextEditingController timeController = TextEditingController();
@@ -300,16 +319,19 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                   backgroundColor: AppColors.darkGreen,
                   minimumSize: const Size(double.infinity, 45),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   if (titleController.text.isEmpty) return;
 
+                  await eventsRef.add({
+                    "title": titleController.text,
+                    "description": descriptionController.text,
+                    "time": timeController.text,
+                    "dateKey": key,
+                  });
+
+                  final updated = await loadEvents();
                   setState(() {
-                    events.putIfAbsent(key, () => []);
-                    events[key]!.add({
-                      "title": titleController.text,
-                      "description": descriptionController.text,
-                      "time": timeController.text,
-                    });
+                    events = updated;
                   });
 
                   Navigator.pop(context);
@@ -349,5 +371,31 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
         );
       },
     );
+  }
+
+  Future<Map<String, List<Map<String, String>>>> loadEvents() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('events')
+        .get();
+
+    Map<String, List<Map<String, String>>> loaded = {};
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final key = data["dateKey"];
+
+      loaded.putIfAbsent(key, () => []);
+      loaded[key]!.add({
+        "title": data["title"],
+        "description": data["description"],
+        "time": data["time"],
+      });
+    }
+
+    return loaded;
   }
 }
