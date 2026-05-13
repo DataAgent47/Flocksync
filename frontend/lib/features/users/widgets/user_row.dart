@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flocksync/core/theme/flock_theme.dart';
 import 'package:flocksync/models/building_user.dart';
+import '../../../features/messaging/screens/chat_screen.dart';
 import '../services/users_service.dart';
 
 class UserRow extends StatefulWidget {
   final BuildingUser user;
   final String currentUserId;
+  final String currentUserName;
   final String propertyId;
   final bool isManagement;
   final bool showDeletedUser;
@@ -15,6 +17,7 @@ class UserRow extends StatefulWidget {
     super.key,
     required this.user,
     required this.currentUserId,
+    required this.currentUserName,
     required this.propertyId,
     required this.isManagement,
     this.showDeletedUser = false,
@@ -350,7 +353,15 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
   }
 
   void _onMessage() {
-    // intentionally no-op for now
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+            otherUser: widget.user,
+            currentUserId: widget.currentUserId,
+          ),
+      ),
+    );
   }
 
   @override
@@ -433,13 +444,26 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                   color: FlockColors.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  _effectiveApartment.isEmpty ? 'No apartment' : _effectiveApartment,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: FlockColors.textSecondary,
-                                  ),
-                                ),
+                                Builder(builder: (ctx) {
+                                  final isSelf = widget.user.userId == widget.currentUserId;
+                                  final apartment = _effectiveApartment;
+                                  String label;
+                                  if (apartment.isEmpty) {
+                                    label = 'No apartment';
+                                  } else if (isSelf || widget.isManagement || !widget.user.hideApartmentNumber) {
+                                    label = apartment;
+                                  } else {
+                                    label = 'Hidden';
+                                  }
+
+                                  return Text(
+                                    label,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: FlockColors.textSecondary,
+                                    ),
+                                  );
+                                }),
                               ],
                             ),
                           ],

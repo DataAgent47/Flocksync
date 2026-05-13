@@ -153,6 +153,16 @@ class SettingsFirestoreService {
     await _clearVerificationRejection(uid);
   }
 
+  Future<void> updateHideApartmentNumber({
+    required String uid,
+    required bool hide,
+  }) async {
+    await _firestore.collection('users').doc(uid).set({
+      'hide_apt_number': hide,
+      'updated_at': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   Future<void> updateContactEmail({
     required String uid,
     required String contactEmail,

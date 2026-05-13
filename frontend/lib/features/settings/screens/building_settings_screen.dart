@@ -122,7 +122,11 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
     return lines;
   }
 
-  Widget _infoRow({required String label, required Object value}) {
+  Widget _infoRow({
+    required String label,
+    required Object value,
+    CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
+  }) {
     final valueWidget = value is Widget
         ? value
         : Text(
@@ -136,7 +140,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: crossAxisAlignment,
         children: [
           SizedBox(
             width: 130,
@@ -454,6 +458,28 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                       )
                     else
                       _infoRow(label: 'Role', value: 'Resident'),
+                    const SizedBox(height: 8),
+                    Card(
+                      child: SwitchListTile(
+                        title: const Text('Hide apartment number from other residents'),
+                        value: profile.hideApartmentNumber,
+                        onChanged: widget.controller.isLoading
+                            ? null
+                            : (val) async {
+                                final ok = await widget.controller.setHideApartmentNumber(
+                                  uid: widget.uid,
+                                  hide: val,
+                                );
+                                if (!mounted) return;
+                                setState(() {
+                                  _statusMessage = ok
+                                      ? (widget.controller.successMessage ?? '')
+                                      : (widget.controller.errorMessage ?? 'Could not update setting.');
+                                  _statusIsError = !ok;
+                                });
+                              },
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     const Text(
                       'Building Info',

@@ -186,6 +186,7 @@ class OnboardingFirestoreService {
       'contact_email': safeContactEmail,
       'phone': phone.trim(),
       'apt_number': aptNumber.trim().isEmpty ? null : aptNumber.trim(),
+      'hide_apt_number': false,
       'role': isManagement ? 'manager' : 'resident',
       'property_id': activePropertyId,
       'onboarding_state': {
