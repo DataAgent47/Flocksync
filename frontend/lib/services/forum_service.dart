@@ -56,44 +56,47 @@ Stream<List<ForumPost>> postsStream({
     });
   }
 
-  /// Create a new post, optionally uploading images first.
-  Future<String> createPost({
-    required String authorId,
-    required String authorName,
-    String authorAvatarUrl = '',
-    required ForumType forumType,
-    required String forumKey,
-    required String buildingId,
-    required String title,
-    required String body,
-    required PostCategory category,
-    List<File> imageFiles = const [],
-  }) async {
-    final imageUrls = await _uploadImages(imageFiles, 'forum_posts');
+/// Create a new post, optionally uploading images first.
+Future<String> createPost({
+  required String authorId,
+  required String authorName,
+  String authorAvatarUrl = '',
+  required ForumType forumType,
+  required String forumKey,
+  required String buildingId,
+  required String title,
+  required String body,
+  required PostCategory category,
+  required String authorRole,       // 'resident' or 'management'
+  required bool authorIsVerified,   // verification status at time of post
+  List<File> imageFiles = const [],
+}) async {
+  final imageUrls = await _uploadImages(imageFiles, 'forum_posts');
 
-    final ref = _posts.doc();
-    await ref.set({
-      'authorId': authorId,
-      'authorName': authorName,
-      'authorAvatarUrl': authorAvatarUrl,
-      'buildingId': buildingId,
-      'forumType': forumType.name,
-      'forumKey': forumKey,
-      'zipCode': forumType == ForumType.neighborhood ? forumKey : '',
-      'title': title,
-      'body': body,
-      'content': body,
-      'category': category.name,
-      'imageUrls': imageUrls,
-      'upvotedBy': <String>[],
-      'replyCount': 0,
-      'isPinned': false,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    return ref.id;
-  }
-
+  final ref = _posts.doc();
+  await ref.set({
+    'authorId': authorId,
+    'authorName': authorName,
+    'authorAvatarUrl': authorAvatarUrl,
+    'authorRole': authorRole,
+    'authorIsVerified': authorIsVerified,
+    'buildingId': buildingId,
+    'forumType': forumType.name,
+    'forumKey': forumKey,
+    'zipCode': forumType == ForumType.neighborhood ? forumKey : '',
+    'title': title,
+    'body': body,
+    'content': body,
+    'category': category.name,
+    'imageUrls': imageUrls,
+    'upvotedBy': <String>[],
+    'replyCount': 0,
+    'isPinned': false,
+    'createdAt': FieldValue.serverTimestamp(),
+    'updatedAt': FieldValue.serverTimestamp(),
+  });
+  return ref.id;
+}
   /// Delete a post and all its replies (management/author only — enforce in UI).
   Future<void> deletePost(String postId) async {
     final repliesSnap = await _replies(postId).get();

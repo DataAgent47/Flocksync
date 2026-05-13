@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/forum_post.dart';
 import '../../../core/theme/flock_theme.dart';
+import '../../../core/widgets/verification_badge.dart';
 import 'category_chip.dart';
 
 class PostCard extends StatelessWidget {
@@ -133,12 +134,26 @@ class PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 7),
                 Expanded(
-                  child: Text(post.authorName,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: FlockColors.textSecondary),
-                      overflow: TextOverflow.ellipsis),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          post.authorName,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: FlockColors.textSecondary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      VerificationBadge(
+                        isVerified: post.authorIsVerified,
+                        role: post.authorRole,
+                      ),
+                    ],
+                  ),
                 ),
                 // Upvote
                 GestureDetector(

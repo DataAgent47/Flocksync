@@ -349,8 +349,10 @@ class OnboardingFirestoreService {
       'manager_id': uid,
       'property_id': propertyId,
       'manager_role': managementRole,
-      'is_verified': false,
-      'verified_at': null,
+      // Managers completing onboarding are trusted for their building; the app
+      // reads is_verified for UI gating (badges, forum entry).
+      'is_verified': true,
+      'verified_at': timestamp,
       'verified_rejected': false,
       'updated_at': timestamp,
     };
