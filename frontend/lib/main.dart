@@ -776,9 +776,8 @@ class _UsersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _UsersScreen(
+    return UsersScreen(
       userId: userId,
-      userName: userName,
       buildingId: buildingId,
       isManagement: isManagement,
     );
