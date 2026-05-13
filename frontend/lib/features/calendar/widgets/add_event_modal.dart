@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/theme/flock_theme.dart';
-import '../../../main.dart'; // ✅ IMPORTANT (for MainShell)
+import '../../../main.dart'; 
 
 class AddEventModal extends StatelessWidget {
   final String dateKey;
@@ -59,7 +59,6 @@ class AddEventModal extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            /// ✅ SAVE EVENT
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.darkGreen,
