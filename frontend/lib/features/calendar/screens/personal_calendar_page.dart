@@ -20,7 +20,30 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
   void initState() {
     super.initState();
 
-    loadEvents().then((loaded) {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('events')
+        .snapshots()
+        .listen((snapshot) {
+      final Map<String, List<Map<String, String>>> loaded = {};
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+
+        final key = data["dateKey"] as String;
+
+        loaded.putIfAbsent(key, () => []);
+        loaded[key]!.add({
+          "id": doc.id,
+          "title": data["title"] ?? "",
+          "description": data["description"] ?? "",
+          "time": data["time"] ?? "",
+        });
+      }
+
       setState(() {
         events = loaded;
       });
@@ -37,7 +60,7 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
   }
 
   String getDateKey(DateTime date) {
-    return "${date.year}-${date.month}-${date.day}";
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
   // nav handler
