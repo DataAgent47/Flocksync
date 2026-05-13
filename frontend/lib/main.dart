@@ -458,12 +458,9 @@ class _DashboardScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Forum
-          titleSection('Calendar'),
+          titleSection('Active Appointments'),
           const SizedBox(height: 10),
-          cardContainer(
-            height: 520,
-            child: PersonalCalendarPage()
-          ),
+          const ActiveAppointmentsWidget()
         ],
       ),
     );
@@ -551,6 +548,55 @@ class _ArrowButton extends StatelessWidget {
         ),
         child: Icon(icon, size: 20),
       ),
+    );
+  }
+}
+
+class ActiveAppointmentsWidget extends StatelessWidget {
+  const ActiveAppointmentsWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final stream = FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('events')
+      .orderBy('dateKey')
+      .snapshots();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: stream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
+        }
+
+        final docs = snapshot.data!.docs;
+
+        if (docs.isEmpty) {
+          return const Text("No active appointments right now.");
+        }
+
+        return ListView(
+          shrinkWrap: true,
+          children: docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+
+            return ListTile(
+              title: Text(data["title"] ?? ""),
+              subtitle: Text("${data["dateKey"]} • ${data["time"]}"),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () async {
+                  await doc.reference.delete();
+                },
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }
