@@ -18,13 +18,20 @@ const MAX_MAP_RESULT_LIMIT = 10
 const MAP_REQUEST_TIMEOUT_MS = 10000
 
 // Init
-dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 5000
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
    .split(',')
    .map((origin) => origin.trim())
    .filter(Boolean)
+
+// multer memory storage(cloud)
+// 10mb limit
+// use for the verification documents
+const upload = multer({
+   storage: multer.memoryStorage(),
+   limits: { fileSize: 10 * 1024 * 1024 },
+})
 
 const isLocalDevOrigin = (origin) => {
    try {
@@ -163,11 +170,15 @@ admin.initializeApp({
 const db = admin.firestore()
 
 //--------------------SUPABASE
+// put in .env from the supabase
+// SUPABASE_URL=https://<the-long-string-of-letters-in-the-url>.supabase.co
+// go to settings -> api keys
+// SUPABASE_ANON_KEY=<publishable-key>
+// SUPABASE_SERVICE_ROLE_KEY=<secret-key>
 const supabase = createClient(
    process.env.SUPABASE_URL,
    process.env.SUPABASE_SERVICE_ROLE_KEY,
 )
-
 //retired
 // using mongodb
 // mongoose
@@ -252,6 +263,27 @@ app.get('/api/maps/verify', async (req, res) => {
          502,
          'Unable to verify the building address right now.',
       )
+   }
+})
+
+// profile picture route
+// for all profile picture uploads
+// dont need get request since this is stored publically, just call photo_url on the front
+app.post('/api/user/update-profile-picture', async (req, res) => {
+   const { userId, photoUrl } = req.body
+   if (!userId || !photoUrl) {
+      return res.status(400).json({ error: 'Missing userId or photoUrl' })
+   }
+
+   try {
+      await db.collection('users').doc(userId).set(
+         {
+            photo_url: photoUrl,
+         },
+         { merge: true },
+      )
+   } catch (error) {
+      res.status(500).json({ error: error.message })
    }
 })
 
