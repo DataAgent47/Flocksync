@@ -74,7 +74,7 @@ npm run dev
 
 ## Optional env variables
 
-- `PORT=5000` 
+- `PORT=5050` 
 - `FRONTEND_ORIGIN=http://localhost:3000,http://123.123.123.123:1234`
 - `MAP_USER_AGENT=Flocksync/1.0 (contact: help@hos.sh)`
 

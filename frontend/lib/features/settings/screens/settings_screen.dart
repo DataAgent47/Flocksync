@@ -61,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           backgroundColor: FlockColors.cream,
           body: SafeArea(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
               children: [
                 
                 const Text(
@@ -70,6 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
                     color: FlockColors.darkGreen,
+                    letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -77,10 +78,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Manage your account and privacy preferences.',
                   style: TextStyle(
                     color: FlockColors.textSecondary,
-                    fontSize: 15,
+                    fontSize: 16,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 StreamBuilder(
                   stream: _controller.profileStream(widget.user.uid),
                   builder: (context, snapshot) {
@@ -88,9 +90,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     final fullName = profile == null
                         ? ''
                         : '${profile.firstName} ${profile.lastName}'.trim();
-                    final authPhotoUrl =
-                        (FirebaseAuth.instance.currentUser?.photoURL ?? '')
-                            .trim();
+                    final photoUrl = (profile?.photoUrl ??
+                        FirebaseAuth.instance.currentUser?.photoURL ??
+                        '')
+                      .trim();
 
                     return Row(
                       children: [
@@ -106,10 +109,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: CircleAvatar(
                             radius: 30,
                             backgroundColor: FlockColors.tan,
-                            backgroundImage: authPhotoUrl.isNotEmpty
-                                ? NetworkImage(authPhotoUrl)
+                            backgroundImage: photoUrl.isNotEmpty
+                              ? NetworkImage(photoUrl)
                                 : null,
-                            child: authPhotoUrl.isEmpty
+                            child: photoUrl.isEmpty
                                 ? const Icon(
                                     Icons.person,
                                     size: 30,

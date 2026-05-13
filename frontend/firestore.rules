@@ -19,18 +19,15 @@ service cloud.firestore {
     // ── Property helpers ────────────────────────────────────────────────────
     // Read the property_id directly from the user doc in a single get().
     // This avoids chaining two get() calls which silently fails in Firestore rules.
-
     function userPropertyId() {
       return hasUserDoc() &&
-        'onboarding_state' in userDoc() &&
-        userDoc().onboarding_state is map &&
-        'property_id' in userDoc().onboarding_state &&
-        userDoc().onboarding_state.property_id is string &&
-        userDoc().onboarding_state.property_id.size() > 0
-          ? userDoc().onboarding_state.property_id
+        'property_id' in userDoc() &&
+        userDoc().property_id is string &&
+        userDoc().property_id.size() > 0
+          ? userDoc().property_id
           : '';
     }
-
+    
     function hasBuildingRequest() {
       return userPropertyId().size() > 0;
     }
@@ -62,10 +59,7 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/residents/$(propertyId + "_" + request.auth.uid)) &&
         get(/databases/$(database)/documents/residents/$(propertyId + "_" + request.auth.uid)).data.is_verified == true;
     }
-
-    // Manager onboarding always created this doc with is_verified: false while forum rules
-    // required true, which blocked all managers. Membership on this doc is the gate; optional
-    // is_verified can still be used in the app UI for other workflows.
+    
     function isVerifiedManager(propertyId) {
       return propertyId is string &&
         propertyId.size() > 0 &&
@@ -125,12 +119,34 @@ service cloud.firestore {
         );
     }
 
+    // Helper for messaging
+
+    function conversationIdFor(userA, userB) {
+      return userA < userB
+        ? userA + '_' + userB
+        : userB + '_' + userA;
+    }
+
     // ── Users ───────────────────────────────────────────────────────────────
 
     match /users/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
-      allow create, update: if isSignedIn() && request.auth.uid == uid;
-      allow delete: if false;
+      allow read: if isSignedIn();
+      // Allow read if same bldg
+      // ('property_id' in resource.data && resource.data.property_id is string && resource.data.property_id == userPropertyId())
+      allow create, delete: if isSignedIn() && request.auth.uid == uid;
+      allow update: if isSignedIn() && (
+        request.auth.uid == uid ||
+        (
+          resource.data.property_id == userPropertyId() &&
+          isVerifiedManager(resource.data.property_id) &&
+          request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            'first_name',
+            'last_name',
+            'apt_number',
+            'updated_at'
+          ])
+        )
+      );
     }
 
     // ── Properties ──────────────────────────────────────────────────────────
@@ -142,22 +158,38 @@ service cloud.firestore {
     }
 
     // ── Residents ───────────────────────────────────────────────────────────
-
     match /residents/{residentDocId} {
       allow read: if isSignedIn();
-      allow create, update: if isSignedIn() &&
+      allow create: if isSignedIn() &&
         request.resource.data.resident_id == request.auth.uid;
-      allow delete: if false;
+
+      // verified manager in same property can change verification fields only
+      allow update: if isSignedIn() && (
+        request.resource.data.resident_id == request.auth.uid ||
+        (
+          isVerifiedManager(resource.data.property_id) &&
+          request.resource.data.property_id == resource.data.property_id
+        )
+      );
+      allow delete: if isSignedIn() && resource.data.resident_id == request.auth.uid;
     }
 
     // ── Managers ────────────────────────────────────────────────────────────
 
     match /managers/{managerDocId} {
       allow read: if isSignedIn();
-      allow create, update: if isSignedIn() &&
+      allow create: if isSignedIn() &&
         request.resource.data.manager_id == request.auth.uid;
-      allow delete: if false;
-    }
+
+      allow update: if isSignedIn() && (
+        request.resource.data.manager_id == request.auth.uid ||
+        (
+          isVerifiedManager(resource.data.property_id) &&
+          request.resource.data.property_id == resource.data.property_id
+        )
+      );
+  		allow delete: if isSignedIn() && resource.data.manager_id == request.auth.uid;
+}
 
     // ── Forum posts ─────────────────────────────────────────────────────────
 
@@ -225,6 +257,54 @@ service cloud.firestore {
           )
         );
       }
+    }
+    
+    // ── Bookings (Maintenance Requests) ─────────────────────────────
+    match /bookings/{bookingId} {
+      allow read, write: if true;
+    }
+
+    // -- Messaging 
+
+    match /messages/{messageId} {
+      allow read: if isSignedIn() &&
+        resource.data.conversationId is string && (
+          resource.data.conversationId.matches('^' + request.auth.uid + '_.*$') ||
+          resource.data.conversationId.matches('^.*_' + request.auth.uid + '$')
+        );
+
+      allow create: if isSignedIn() &&
+        request.resource.data.senderId == request.auth.uid &&
+        request.resource.data.senderId is string &&
+        request.resource.data.recipientId is string &&
+        request.resource.data.recipientId.size() > 0 &&
+        request.resource.data.senderId != request.resource.data.recipientId &&
+        request.resource.data.text is string &&
+        request.resource.data.text.size() > 0 &&
+        request.resource.data.conversationId is string &&
+        request.resource.data.conversationId ==
+          conversationIdFor(
+            request.resource.data.senderId,
+            request.resource.data.recipientId
+          ) &&
+        request.resource.data.timestamp is timestamp;
+
+      allow update, delete: if false;
+    }
+
+    match /typing_status/{statusId} {
+      allow read: if isSignedIn() && (
+        !exists(/databases/$(database)/documents/typing_status/$(statusId)) ||
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.otherUserId == request.auth.uid
+      );
+
+      allow create, update: if isSignedIn() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.isTyping is bool &&
+        request.resource.data.timestamp is timestamp;
+
+      allow delete: if false;
     }
   }
 }

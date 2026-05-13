@@ -149,6 +149,18 @@ class SettingsFirestoreService {
       'phone': phone.trim(),
       'updated_at': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    await _clearVerificationRejection(uid);
+  }
+
+  Future<void> updateHideApartmentNumber({
+    required String uid,
+    required bool hide,
+  }) async {
+    await _firestore.collection('users').doc(uid).set({
+      'hide_apt_number': hide,
+      'updated_at': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> updateContactEmail({
@@ -159,6 +171,8 @@ class SettingsFirestoreService {
       'contact_email': contactEmail.trim(),
       'updated_at': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    await _clearVerificationRejection(uid);
   }
 
   Future<void> deleteAccountData(String uid) async {
@@ -237,5 +251,27 @@ class SettingsFirestoreService {
     }
 
     return '${chunk()}-${chunk()}';
+  }
+
+  Future<void> _clearVerificationRejection(String uid) async {
+    final userDoc = await _firestore.collection('users').doc(uid).get();
+    final userData = userDoc.data();
+    if (userData == null) {
+      return;
+    }
+
+    final role = (userData['role'] as String? ?? '').trim();
+    final propertyId = (userData['property_id'] as String? ?? '').trim();
+    if (propertyId.isEmpty) {
+      return;
+    }
+
+    final collection = role == 'manager' ? 'managers' : 'residents';
+    final docId = '${propertyId}_$uid';
+
+    await _firestore.collection(collection).doc(docId).set({
+      'verified_rejected': false,
+      'updated_at': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 }

@@ -2,6 +2,7 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OnboardingPropertyRecord {
   const OnboardingPropertyRecord({
@@ -185,6 +186,7 @@ class OnboardingFirestoreService {
       'contact_email': safeContactEmail,
       'phone': phone.trim(),
       'apt_number': aptNumber.trim().isEmpty ? null : aptNumber.trim(),
+      'hide_apt_number': false,
       'role': isManagement ? 'manager' : 'resident',
       'property_id': activePropertyId,
       'onboarding_state': {
@@ -193,6 +195,9 @@ class OnboardingFirestoreService {
       },
       'updated_at': timestamp,
     };
+
+    final authPhotoUrl = FirebaseAuth.instance.currentUser?.photoURL;
+    userPayload['photo_url'] = (authPhotoUrl?.trim() ?? '');
 
     if (!existingUser.exists) {
       userPayload['created_at'] = timestamp;
@@ -320,6 +325,7 @@ class OnboardingFirestoreService {
       'property_id': propertyId,
       'is_verified': isVerified,
       'verified_at': isVerified ? timestamp : null,
+      'verified_rejected': false,
       'updated_at': timestamp,
     };
 
@@ -343,10 +349,11 @@ class OnboardingFirestoreService {
       'manager_id': uid,
       'property_id': propertyId,
       'manager_role': managementRole,
-      // Managers completing onboarding are trusted for their building (forum rules
-      // require is_verified == true on this doc).
+      // Managers completing onboarding are trusted for their building; the app
+      // reads is_verified for UI gating (badges, forum entry).
       'is_verified': true,
       'verified_at': timestamp,
+      'verified_rejected': false,
       'updated_at': timestamp,
     };
 
