@@ -33,7 +33,6 @@ class UpcomingMaintenance extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // 🔥 SCROLLABLE LIST
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
