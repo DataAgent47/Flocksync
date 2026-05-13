@@ -16,8 +16,6 @@ import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/personal_calendar_page.dart';
 import 'features/users/screens/users_screen.dart';
 
-import 'dart:ui';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -314,11 +312,6 @@ class _DashboardScreen extends StatelessWidget {
     return _options.firstWhere((o) => o.category == c).title;
   }
   
-  /// Contains the containers and elements of the Dashboard:
-  ///  - Building Announcements
-  ///  - Upcoming Events
-  ///  - Calendar
-  ///  - Forum Activity
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -465,16 +458,11 @@ class _DashboardScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Forum
-          titleSection('Forum Activity'),
+          titleSection('Calendar'),
           const SizedBox(height: 10),
           cardContainer(
             height: 520,
-            child: ForumFeedScreen(
-              buildingId: buildingId,
-              currentUserId: userId,
-              currentUserName: userName,
-              isManagement: isManagement,
-            ),
+            child: PersonalCalendarPage()
           ),
         ],
       ),
