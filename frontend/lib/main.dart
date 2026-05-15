@@ -329,21 +329,22 @@ class _DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: FlockColors.background,
       body: ListView(
-        // Automatically adds 16px gap between all 'children' or elements.
-        padding: const EdgeInsets.all(16),
+        // Match other pages' header spacing and left alignment
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
         // Contains 'children' or elements for the Dashboard.
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Primary text that writes 'Welcome!'
               const Text(
                 'Welcome!',
                 style: TextStyle(
                   fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: FlockColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  color: FlockColors.darkGreen,
+                  letterSpacing: -0.5,
                 ),
               ),
 
@@ -364,7 +365,7 @@ class _DashboardScreen extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
 
           // Secondary text that introduces users to FlockSync.
           const Text(
@@ -372,10 +373,11 @@ class _DashboardScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               color: FlockColors.textSecondary,
+              height: 1.4,
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 24),
 
           // Account rejection banner
           if (isRejected)
@@ -638,20 +640,51 @@ class _HoverProfileImageState extends State<_HoverProfileImage> {
             shape: BoxShape.circle,
             color: FlockColors.darkGreen,
           ),
-          child: CircleAvatar(
-            radius: 30,
-            backgroundColor: FlockColors.tan,
-            backgroundImage:
-                (FirebaseAuth.instance.currentUser?.photoURL?.isNotEmpty ?? false)
-                    ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
-                    : null,
-            child: (FirebaseAuth.instance.currentUser?.photoURL?.isEmpty ?? true)
-                ? const Icon(
-                    Icons.person,
-                    size: 30,
-                    color: FlockColors.darkGreen,
-                  )
-                : null,
+            child: SizedBox(
+              width: 40,
+              height: 40,
+            child: ClipOval(
+              child: Builder(builder: (context) {
+                final photoUrl = FirebaseAuth.instance.currentUser?.photoURL ?? '';
+                final hasPhoto = photoUrl.isNotEmpty;
+                if (!hasPhoto) {
+                  return Container(
+                    color: FlockColors.tan,
+                    child: const Icon(
+                      Icons.person,
+                      size: 20,
+                      color: FlockColors.darkGreen,
+                    ),
+                  );
+                }
+
+                return Image.network(
+                  photoUrl,
+                  fit: BoxFit.cover,
+                  width: 40,
+                  height: 40,
+                  loadingBuilder: (ctx, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: FlockColors.tan,
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2, color: FlockColors.darkGreen),
+                      ),
+                    );
+                  },
+                  errorBuilder: (ctx, error, stackTrace) {
+                    return Container(
+                      color: FlockColors.tan,
+                      child: const Icon(
+                        Icons.person,
+                        size: 20,
+                        color: FlockColors.darkGreen,
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
           ),
         ),
       ),

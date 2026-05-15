@@ -81,37 +81,30 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "FlockSync",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.darkGreen,
-                    ),
-                  ),
-                  const CircleAvatar(),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
+              // Aligned page header 
               Text(
-                "My Calendar",
+                "Calendar",
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.darkGreen,
+                  letterSpacing: -0.5,
                 ),
               ),
-
-              const SizedBox(height: 15),
+              const SizedBox(height: 8),
+              Text(
+                "View and manage your upcoming events.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
