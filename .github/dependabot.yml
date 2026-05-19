@@ -1,0 +1,38 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/flocksync-backend"
+    schedule:
+      interval: "monthly"
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 10
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+
+  - package-ecosystem: "pub"
+    directory: "/frontend"
+    schedule:
+      interval: "monthly"
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 10
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 10
+
