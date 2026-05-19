@@ -5,6 +5,8 @@ import '../models/settings_property_info.dart';
 import '../models/settings_user_profile.dart';
 import '../services/settings_firestore_service.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class SettingsController extends ChangeNotifier {
   final AuthService _authService;
   final SettingsFirestoreService _firestoreService;
@@ -72,6 +74,7 @@ class SettingsController extends ChangeNotifier {
     required String lastName,
     required String contactEmail,
     required String phone,
+    String? photoBase64,
   }) async {
     return _runAction(() async {
       await _firestoreService.updateProfile(
@@ -80,6 +83,7 @@ class SettingsController extends ChangeNotifier {
         lastName: lastName,
         contactEmail: contactEmail,
         phone: phone,
+        photoBase64: photoBase64
       );
       successMessage = 'Profile updated successfully.';
     });
@@ -94,6 +98,18 @@ class SettingsController extends ChangeNotifier {
       successMessage = hide
           ? 'Apartment number is now hidden.'
           : 'Apartment number is no longer hidden to other residents.';
+    });
+  }
+
+  Future<void> updatePhotoBase64({
+    required String uid,
+    required String photoBase64,
+  }) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .update({
+      'photo_base64': photoBase64,
     });
   }
 

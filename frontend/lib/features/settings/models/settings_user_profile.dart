@@ -6,8 +6,9 @@ class SettingsUserProfile {
   final String role;
   final String apartmentNumber;
   final String propertyId;
-  final String photoUrl;
+  final String photoData;
   final bool hideApartmentNumber;
+  final String photoBase64;
 
   const SettingsUserProfile({
     required this.firstName,
@@ -17,8 +18,9 @@ class SettingsUserProfile {
     required this.role,
     required this.apartmentNumber,
     required this.propertyId,
-    required this.photoUrl,
+    required this.photoData,
     required this.hideApartmentNumber,
+    required this.photoBase64,
   });
 
   factory SettingsUserProfile.fromMap(Map<String, dynamic> data) {
@@ -30,8 +32,13 @@ class SettingsUserProfile {
       role: (data['role'] as String? ?? 'resident').trim(),
       apartmentNumber: (data['apt_number'] as String? ?? '').trim(),
       propertyId: (data['property_id'] as String? ?? '').trim(),
-      photoUrl: (data['photo_url'] as String? ?? '').trim(),
+      photoData: (
+        (data['photo_base64'] as String?) ??
+        (data['photo_url'] as String?) ??
+        ''
+      ).trim(),
       hideApartmentNumber: (data['hide_apt_number'] as bool? ?? false),
+      photoBase64: (data['photo_base64'] as String? ?? '').trim()
     );
   }
 }

@@ -16,6 +16,7 @@ import 'features/onboarding/services/onboarding_firestore_service.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/personal_calendar_page.dart';
 import 'features/users/screens/users_screen.dart';
+import 'dart:convert';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -644,49 +645,60 @@ class _HoverProfileImageState extends State<_HoverProfileImage> {
               width: 40,
               height: 40,
             child: ClipOval(
-              child: Builder(builder: (context) {
-                final photoUrl = FirebaseAuth.instance.currentUser?.photoURL ?? '';
-                final hasPhoto = photoUrl.isNotEmpty;
-                if (!hasPhoto) {
-                  return Container(
-                    color: FlockColors.tan,
-                    child: const Icon(
-                      Icons.person,
-                      size: 20,
-                      color: FlockColors.darkGreen,
-                    ),
-                  );
-                }
+              child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return _defaultAvatar();
+                  }
 
-                return Image.network(
-                  photoUrl,
-                  fit: BoxFit.cover,
-                  width: 40,
-                  height: 40,
-                  loadingBuilder: (ctx, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: FlockColors.tan,
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2, color: FlockColors.darkGreen),
-                      ),
+                  final data = snapshot.data?.data();
+
+                  final photoBase64 =
+                      (data?['photo_base64'] as String? ?? '').trim();
+
+                  if (photoBase64.isEmpty) {
+                    return _defaultAvatar();
+                  }
+
+                  try {
+                    if (photoBase64.startsWith('http')) {
+                      return Image.network(
+                        photoBase64,
+                        fit: BoxFit.cover,
+                        width: 40,
+                        height: 40,
+                      );
+                    }
+
+                    return Image.memory(
+                      base64Decode(photoBase64),
+                      fit: BoxFit.cover,
+                      width: 40,
+                      height: 40,
                     );
-                  },
-                  errorBuilder: (ctx, error, stackTrace) {
-                    return Container(
-                      color: FlockColors.tan,
-                      child: const Icon(
-                        Icons.person,
-                        size: 20,
-                        color: FlockColors.darkGreen,
-                      ),
-                    );
-                  },
-                );
-              }),
+                  } catch (_) {
+                    return _defaultAvatar();
+                  }
+                },
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _defaultAvatar() {
+    return Container(
+      color: FlockColors.tan,
+      child: const Icon(
+        Icons.person,
+        size: 20,
+        color: FlockColors.darkGreen,
       ),
     );
   }

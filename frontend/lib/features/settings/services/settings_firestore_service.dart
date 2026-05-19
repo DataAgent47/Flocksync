@@ -141,14 +141,24 @@ class SettingsFirestoreService {
     required String lastName,
     required String contactEmail,
     required String phone,
+    String? photoBase64
   }) async {
-    await _firestore.collection('users').doc(uid).set({
+    final data = {
       'first_name': firstName.trim(),
       'last_name': lastName.trim(),
       'contact_email': contactEmail.trim(),
       'phone': phone.trim(),
       'updated_at': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+
+    if (photoBase64 != null && photoBase64.isNotEmpty) {
+      data['photo_base64'] = photoBase64;
+    }
+
+    await _firestore
+      .collection('users')
+      .doc(uid)
+      .set(data, SetOptions(merge: true));
 
     await _clearVerificationRejection(uid);
   }
