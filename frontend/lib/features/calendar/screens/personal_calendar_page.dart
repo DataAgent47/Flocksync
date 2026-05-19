@@ -78,6 +78,7 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
     int totalCells = daysInMonth + (firstWeekday % 7);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
