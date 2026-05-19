@@ -9,9 +9,6 @@ updates:
         patterns:
           - "*"
     open-pull-requests-limit: 10
-    allow:
-      - dependency-type: "direct"
-      - dependency-type: "indirect"
 
   - package-ecosystem: "pub"
     directory: "/frontend"
@@ -22,9 +19,6 @@ updates:
         patterns:
           - "*"
     open-pull-requests-limit: 10
-    allow:
-      - dependency-type: "direct"
-      - dependency-type: "indirect"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -35,4 +29,3 @@ updates:
         patterns:
           - "*"
     open-pull-requests-limit: 10
-
