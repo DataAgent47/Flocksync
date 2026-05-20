@@ -578,7 +578,7 @@ class ActiveAppointmentsWidget extends StatelessWidget {
       .collection('users')
       .doc(uid)
       .collection('events')
-      .orderBy('dateKey')
+      .orderBy('date')
       .snapshots();
 
     return StreamBuilder<QuerySnapshot>(
@@ -601,7 +601,7 @@ class ActiveAppointmentsWidget extends StatelessWidget {
 
             return ListTile(
               title: Text(data["title"] ?? ""),
-              subtitle: Text("${data["dateKey"]} • ${data["time"]}"),
+              subtitle: Text("${data["date"]} • ${data["time"]}"),
               trailing: IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 onPressed: () async {

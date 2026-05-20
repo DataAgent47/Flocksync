@@ -13,45 +13,21 @@ class PersonalCalendarPage extends StatefulWidget {
 
 class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
   DateTime currentMonth = DateTime.now();
-  Map<String, List<Map<String, dynamic>>> events = {};
 
   String? get uid => FirebaseAuth.instance.currentUser?.uid;
 
-  @override
-  void initState() {
-    super.initState();
-    loadEvents();
-  }
-
-  Future<void> loadEvents() async {
+  Stream<QuerySnapshot<Map<String, dynamic>>> get eventsStream {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      return const Stream.empty();
+    }
 
-    final snapshot = await FirebaseFirestore.instance
+    return FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('events')
-        .get();
-
-    Map<String, List<Map<String, dynamic>>> loadedEvents = {};
-
-    for (var doc in snapshot.docs) {
-      var data = doc.data();
-      String date = data['date'];
-
-      loadedEvents.putIfAbsent(date, () => []);
-      loadedEvents[date]!.add({
-        "id": doc.id,
-        "title": data['title'],
-        "description": data['description'],
-        "time": data['time'],
-      });
-    }
-
-    if (!mounted) return;
-    setState(() {
-      events = loadedEvents;
-    });
+        .orderBy('date')
+        .snapshots();
   }
 
   String monthName(int month) {
@@ -78,7 +54,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
     int totalCells = daysInMonth + (firstWeekday % 7);
 
     return Scaffold(
-      resizeToAvoidBottomInset: true,
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
@@ -155,66 +130,90 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
               const SizedBox(height: 8),
 
               Expanded(
-                child: GridView.builder(
-                  itemCount: totalCells,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    mainAxisExtent: 95,
-                  ),
-                  itemBuilder: (context, index) {
-                    if (index < (firstWeekday % 7)) {
-                      return const SizedBox();
+                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: eventsStream,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
                     }
 
-                    int dayNumber = index - (firstWeekday % 7) + 1;
+                    final docs = snapshot.data!.docs;
 
-                    DateTime day = DateTime(
-                      currentMonth.year,
-                      currentMonth.month,
-                      dayNumber,
-                    );
+                    // rebuild your map from live data
+                    final Map<String, List<Map<String, dynamic>>> events = {};
 
-                    String key = getDateKey(day);
-                    List dayEvents = events[key] ?? [];
+                    for (final doc in docs) {
+                      final data = doc.data();
+                      final date = data['date'] as String;
 
-                    return GestureDetector(
-                      onTap: () => _openDayModal(day),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: Colors.grey.shade300,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "$dayNumber",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            ...dayEvents.take(2).map((event) {
-                              return Text(
-                                event["title"] ?? "",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.darkGreen,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              );
-                            }),
-                          ],
-                        ),
+                      events.putIfAbsent(date, () => []);
+                      events[date]!.add({
+                        "id": doc.id,
+                        "title": data['title'],
+                        "description": data['description'],
+                        "time": data['time'],
+                      });
+                    }
+
+                    return GridView.builder(
+                      itemCount: totalCells,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                        mainAxisExtent: 95,
                       ),
+                      itemBuilder: (context, index) {
+                        if (index < (firstWeekday % 7)) {
+                          return const SizedBox();
+                        }
+
+                        int dayNumber = index - (firstWeekday % 7) + 1;
+
+                        DateTime day = DateTime(
+                          currentMonth.year,
+                          currentMonth.month,
+                          dayNumber,
+                        );
+
+                        String key = getDateKey(day);
+                        List dayEvents = events[key] ?? [];
+
+                        return GestureDetector(
+                          onTap: () => _openDayModal(day, events),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "$dayNumber",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                ...dayEvents.take(2).map((event) {
+                                  return Text(
+                                    event["title"] ?? "",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.darkGreen,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -226,7 +225,7 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
     );
   }
 
-  void _openDayModal(DateTime day) {
+  void _openDayModal(DateTime day, Map<String, List<Map<String, dynamic>>> events) {
     String key = getDateKey(day);
     List dayEvents = events[key] ?? [];
 
@@ -292,7 +291,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                                         .doc(event["id"])
                                         .delete();
 
-                                    await loadEvents();
                                     if (!mounted || !context.mounted) return;
                                     Navigator.pop(context);
                                   },
@@ -329,7 +327,7 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
       builder: (context) {
         return AddEventModal(
           dateKey: key,
-          onSave: loadEvents,
+          onSave: () async {},
         );
       },
     );
@@ -411,7 +409,6 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                       "time": timeController.text,
                     });
 
-                    await loadEvents();
                     if (!mounted || !context.mounted) return;
                     Navigator.pop(context);
                   },

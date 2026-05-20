@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/theme/flock_theme.dart';
 import '../../../main.dart'; 
 
-class AddEventModal extends StatelessWidget {
+class AddEventModal extends StatefulWidget {
   final String dateKey;
   final Future<void> Function() onSave;
 
@@ -15,12 +15,34 @@ class AddEventModal extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    TextEditingController titleController = TextEditingController();
-    TextEditingController descriptionController = TextEditingController();
-    TextEditingController timeController = TextEditingController();
+  State<AddEventModal> createState() => _AddEventModalState();
+}
 
-    final user = FirebaseAuth.instance.currentUser;
+class _AddEventModalState extends State<AddEventModal> {
+  late TextEditingController titleController;
+  late TextEditingController descriptionController;
+  late TextEditingController timeController;
+
+  User? get user => FirebaseAuth.instance.currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    titleController = TextEditingController();
+    descriptionController = TextEditingController();
+    timeController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descriptionController.dispose();
+    timeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final uid = user?.uid;
 
     return Padding(
@@ -40,7 +62,7 @@ class AddEventModal extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  dateKey,
+                  widget.dateKey,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -83,14 +105,14 @@ class AddEventModal extends StatelessWidget {
                         .doc(uid)
                         .collection('events')
                         .add({
-                      "date": dateKey,
+                      "date": widget.dateKey,
                       "title": titleController.text,
                       "description": descriptionController.text,
                       "time": timeController.text,
                       "userId": uid,
                     });
 
-                    await onSave();
+                    await widget.onSave();
 
                     if (context.mounted) Navigator.pop(context);
                   },

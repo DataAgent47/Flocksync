@@ -6,7 +6,6 @@ import '../../../core/widgets/flock_message_banner.dart';
 import '../controllers/settings_controller.dart';
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 
