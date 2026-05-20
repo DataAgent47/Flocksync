@@ -107,12 +107,17 @@ class _MaintenanceCalendarState extends State<MaintenanceCalendar> {
                 },
               ),
 
-              Text(
-                "${monthName(currentMonth.month)} ${currentMonth.year}",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.darkGreen,
+              Flexible(
+                child: Text(
+                  "${monthName(currentMonth.month)} ${currentMonth.year}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.darkGreen,
+                  ),
                 ),
               ),
 
@@ -233,16 +238,18 @@ class _MaintenanceCalendarState extends State<MaintenanceCalendar> {
                 children: [
 
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     hint: const Text("Select Time"),
                     initialValue: selectedSlot,
-
                     items: available.map((slot) {
-
                       return DropdownMenuItem(
                         value: slot,
-                        child: Text(slot),
+                        child: Text(
+                          slot,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
-
                     }).toList(),
 
                     onChanged: (value) {

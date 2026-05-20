@@ -88,10 +88,9 @@ class _BookingPageState extends State<BookingPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          content: const SizedBox(
-            height: 100,
+          content: const SingleChildScrollView(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   "Success",
@@ -138,25 +137,34 @@ class _BookingPageState extends State<BookingPage> {
         backgroundColor: AppColors.darkGreen,
         title: const Text("Book Maintenance"),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "${widget.date.month}/${widget.date.day}/${widget.date.year} • ${widget.slot}",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.darkGreen,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.paddingOf(context).bottom,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "${widget.date.month}/${widget.date.day}/${widget.date.year} • ${widget.slot}",
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.darkGreen,
+                ),
               ),
-            ),
             const SizedBox(height: 20),
 
             _sectionTitle("Category"),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               items: ["Plumbing", "Electrical", "Heating", "Appliance", "Other"]
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .map(_dropdownItem)
                   .toList(),
               onChanged: (v) => setState(() => selectedCategory = v),
               decoration: _inputDecoration(),
@@ -175,9 +183,8 @@ class _BookingPageState extends State<BookingPage> {
 
             _sectionTitle("Urgency"),
             DropdownButtonFormField<String>(
-              items: ["Low", "Medium", "High"]
-                  .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                  .toList(),
+              isExpanded: true,
+              items: ["Low", "Medium", "High"].map(_dropdownItem).toList(),
               onChanged: (v) => setState(() => selectedUrgency = v),
               decoration: _inputDecoration(),
             ),
@@ -186,12 +193,11 @@ class _BookingPageState extends State<BookingPage> {
 
             _sectionTitle("Entry Permission"),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               items: [
                 "Allow entry if not home",
-                "Do not allow entry"
-              ]
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
+                "Do not allow entry",
+              ].map(_dropdownItem).toList(),
               onChanged: (v) => setState(() => entryPermission = v),
               decoration: _inputDecoration(),
             ),
@@ -240,8 +246,20 @@ class _BookingPageState extends State<BookingPage> {
                       style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
             ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  DropdownMenuItem<String> _dropdownItem(String value) {
+    return DropdownMenuItem(
+      value: value,
+      child: Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

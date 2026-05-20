@@ -400,7 +400,7 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         width: 48,
@@ -428,6 +428,8 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                           children: [
                             Text(
                               _effectiveFullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -436,7 +438,6 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 4),
                             Row(
-                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(
                                   Icons.home_outlined,
@@ -444,84 +445,62 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
                                   color: FlockColors.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
-                                Builder(builder: (ctx) {
-                                  final isSelf = widget.user.userId == widget.currentUserId;
-                                  final apartment = _effectiveApartment;
-                                  String label;
-                                  if (apartment.isEmpty) {
-                                    label = 'No apartment';
-                                  } else if (isSelf || widget.isManagement || !widget.user.hideApartmentNumber) {
-                                    label = apartment;
-                                  } else {
-                                    label = 'Hidden';
-                                  }
+                                Flexible(
+                                  child: Builder(builder: (ctx) {
+                                    final isSelf =
+                                        widget.user.userId == widget.currentUserId;
+                                    final apartment = _effectiveApartment;
+                                    String label;
+                                    if (apartment.isEmpty) {
+                                      label = 'No apartment';
+                                    } else if (isSelf ||
+                                        widget.isManagement ||
+                                        !widget.user.hideApartmentNumber) {
+                                      label = apartment;
+                                    } else {
+                                      label = 'Hidden';
+                                    }
 
-                                  return Text(
-                                    label,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: FlockColors.textSecondary,
-                                    ),
-                                  );
-                                }),
+                                    return Text(
+                                      label,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: FlockColors.textSecondary,
+                                      ),
+                                    );
+                                  }),
+                                ),
                               ],
                             ),
                           ],
                         ),
                       ),
-                      if (isRejectedView) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade900,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Deleted',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: FlockColors.cream,
-                            ),
-                          ),
-                        ),
-                      ] else if (!_effectiveIsVerified) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade600,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Unverified',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: FlockColors.cream,
-                            ),
-                          ),
-                        ),
-                      ],
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: _getRoleBadgeColor(),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                            widget.user.role == 'manager' &&
-                                (_effectiveManagerRole ?? '').isNotEmpty
-                              ? _effectiveManagerRole!
-                              : widget.user.roleLabel,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: FlockColors.cream,
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          if (isRejectedView)
+                            _StatusBadge(
+                              label: 'Deleted',
+                              color: Colors.red.shade900,
+                            )
+                          else if (!_effectiveIsVerified)
+                            _StatusBadge(
+                              label: 'Unverified',
+                              color: Colors.red.shade600,
+                            ),
+                          _StatusBadge(
+                            label: widget.user.role == 'manager' &&
+                                    (_effectiveManagerRole ?? '').isNotEmpty
+                                ? _effectiveManagerRole!
+                                : widget.user.roleLabel,
+                            color: _getRoleBadgeColor(),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -662,6 +641,34 @@ class _UserRowState extends State<UserRow> with TickerProviderStateMixin {
       return null;
     }
     return _managerRoles.contains(trimmed) ? trimmed : null;
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _StatusBadge({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: FlockColors.cream,
+        ),
+      ),
+    );
   }
 }
 

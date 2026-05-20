@@ -12,30 +12,31 @@ class MaintenancePage extends StatelessWidget {
       backgroundColor: AppColors.background,
 
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "FlockSync",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.darkGreen,
+                  Expanded(
+                    child: Text(
+                      "FlockSync",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.darkGreen,
+                      ),
                     ),
                   ),
                   const CircleAvatar(),
                 ],
               ),
-
               const SizedBox(height: 20),
-
-              Text(
+              const Text(
                 "Calendar",
                 style: TextStyle(
                   fontSize: 20,
@@ -43,16 +44,10 @@ class MaintenancePage extends StatelessWidget {
                   color: AppColors.darkGreen,
                 ),
               ),
-
               const SizedBox(height: 15),
-
               const MaintenanceCalendar(),
-
               const SizedBox(height: 20),
-
-              const Expanded(
-                child: UpcomingMaintenance(),
-              ),
+              const UpcomingMaintenance(),
             ],
           ),
         ),

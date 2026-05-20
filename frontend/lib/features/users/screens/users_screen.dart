@@ -31,6 +31,14 @@ class _UsersScreenState extends State<UsersScreen> {
 
   bool get _canSeeRestrictedFilters => widget.isManagement;
 
+  List<({String id, String label})> get _filterOptions => [
+        (id: 'all', label: 'All'),
+        if (_canSeeRestrictedFilters) (id: 'unverified', label: 'Unverified'),
+        (id: 'residents', label: 'Residents'),
+        (id: 'management', label: 'Management'),
+        if (_canSeeRestrictedFilters) (id: 'deleted', label: 'Deleted'),
+      ];
+
   void _setFilter(String filter) {
     if ((filter == 'unverified' || filter == 'deleted') &&
         !_canSeeRestrictedFilters) {
@@ -81,46 +89,20 @@ class _UsersScreenState extends State<UsersScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Filter btns
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        UserFilterButton(
-                          label: 'All',
-                          isSelected: _selectedFilter == 'all',
-                          onTap: () => _setFilter('all'),
-                        ),
-                        if (_canSeeRestrictedFilters) ...[
-                          const SizedBox(width: 8),
-                          UserFilterButton(
-                            label: 'Unverified',
-                            isSelected: _selectedFilter == 'unverified',
-                            onTap: () => _setFilter('unverified'),
-                          ),
-                        ],
-                        const SizedBox(width: 8),
-                        UserFilterButton(
-                          label: 'Residents',
-                          isSelected: _selectedFilter == 'residents',
-                          onTap: () => _setFilter('residents'),
-                        ),
-                        const SizedBox(width: 8),
-                        UserFilterButton(
-                          label: 'Management',
-                          isSelected: _selectedFilter == 'management',
-                          onTap: () => _setFilter('management'),
-                        ),
-                        if (_canSeeRestrictedFilters) ...[
-                          const SizedBox(width: 8),
-                          UserFilterButton(
-                            label: 'Deleted',
-                            isSelected: _selectedFilter == 'deleted',
-                            onTap: () => _setFilter('deleted'),
-                          ),
-                        ]
-                      ],
+                  SizedBox(
+                    height: 36,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _filterOptions.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final option = _filterOptions[index];
+                        return UserFilterButton(
+                          label: option.label,
+                          isSelected: _selectedFilter == option.id,
+                          onTap: () => _setFilter(option.id),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),

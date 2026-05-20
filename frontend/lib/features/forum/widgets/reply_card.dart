@@ -49,15 +49,26 @@ class ReplyCard extends StatelessWidget {
               children: [
                 // Header
                 Row(children: [
-                  Text(reply.authorName,
+                  Flexible(
+                    child: Text(
+                      reply.authorName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                          color: FlockColors.textPrimary)),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: FlockColors.textPrimary,
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 6),
-                  Text(_formatDate(reply.createdAt),
-                      style: const TextStyle(
-                          fontSize: 11, color: FlockColors.textMuted)),
+                  Text(
+                    _formatDate(reply.createdAt),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: FlockColors.textMuted,
+                    ),
+                  ),
                   const Spacer(),
                   if (onDelete != null)
                     GestureDetector(

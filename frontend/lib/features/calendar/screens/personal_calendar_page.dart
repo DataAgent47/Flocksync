@@ -111,12 +111,16 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "FlockSync",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.darkGreen,
+                  Expanded(
+                    child: Text(
+                      "FlockSync",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.darkGreen,
+                      ),
                     ),
                   ),
                   const CircleAvatar(),
@@ -152,11 +156,16 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
                     },
                   ),
 
-                  Text(
-                    "${monthName(currentMonth.month)} ${currentMonth.year}",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Flexible(
+                    child: Text(
+                      "${monthName(currentMonth.month)} ${currentMonth.year}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
 
@@ -290,107 +299,109 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-
-      builder: (context) {
-
-        return Padding(
-          padding: const EdgeInsets.all(16),
-
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-
-            children: [
-
-              Text(
-                "${day.month}/${day.day}/${day.year}",
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              const Text("Add Event"),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: "Title"),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: "Description"),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: timeController,
-                decoration: const InputDecoration(labelText: "Time"),
-              ),
-
-              const SizedBox(height: 20),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.darkGreen,
-                  minimumSize: const Size(double.infinity, 45),
-                ),
-                onPressed: () async {
-                  if (titleController.text.isEmpty) return;
-
-                  await eventsRef.add({
-                    "title": titleController.text,
-                    "description": descriptionController.text,
-                    "time": timeController.text,
-                    "dateKey": key,
-                  });
-
-                  final updated = await loadEvents();
-                  setState(() {
-                    events = updated;
-                  });
-
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "Save Event",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.green2,
-                  minimumSize: const Size(double.infinity, 45),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MaintenancePage(),
+      backgroundColor: AppColors.cream,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (_, scrollController) {
+            final bottomInset = MediaQuery.paddingOf(sheetContext).bottom;
+            return ListView(
+              controller: scrollController,
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.tan,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                  );
-                },
-                child: const Text(
-                  "Request Maintenance",
-                  style: TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  "${day.month}/${day.day}/${day.year}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text("Add Event"),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: "Title"),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(labelText: "Description"),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: timeController,
+                  decoration: const InputDecoration(labelText: "Time"),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.darkGreen,
+                    minimumSize: const Size(double.infinity, 45),
+                  ),
+                  onPressed: () async {
+                    if (titleController.text.isEmpty) return;
 
-              const SizedBox(height: 10),
-            ],
-          ),
+                    await eventsRef.add({
+                      "title": titleController.text,
+                      "description": descriptionController.text,
+                      "time": timeController.text,
+                      "dateKey": key,
+                    });
+
+                    final updated = await loadEvents();
+                    if (!context.mounted) return;
+                    setState(() {
+                      events = updated;
+                    });
+
+                    Navigator.pop(sheetContext);
+                  },
+                  child: const Text(
+                    "Save Event",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.green2,
+                    minimumSize: const Size(double.infinity, 45),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MaintenancePage(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "Request Maintenance",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

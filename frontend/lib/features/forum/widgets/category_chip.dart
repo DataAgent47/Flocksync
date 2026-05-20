@@ -27,7 +27,9 @@ class CategoryFilterBar extends StatelessWidget {
       child: Row(
         children: [
           // ── All Posts button ─────────────────────────────────────────
-          GestureDetector(
+          Flexible(
+            fit: FlexFit.loose,
+            child: GestureDetector(
             onTap: () => onSelected(null),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
@@ -54,19 +56,24 @@ class CategoryFilterBar extends StatelessWidget {
                         : FlockColors.midGreen,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    'All Posts',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: selected == null
-                          ? FlockColors.cream
-                          : FlockColors.darkGreen,
+                  Flexible(
+                    child: Text(
+                      'All Posts',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: selected == null
+                            ? FlockColors.cream
+                            : FlockColors.darkGreen,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+          ),
           ),
 
           const Spacer(),

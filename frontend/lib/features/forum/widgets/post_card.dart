@@ -63,9 +63,18 @@ class PostCard extends StatelessWidget {
                   ],
                   CategoryChip(category: post.category, compact: true),
                   const Spacer(),
-                  Text(_formatDate(post.createdAt),
+                  Flexible(
+                    child: Text(
+                      _formatDate(post.createdAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
                       style: const TextStyle(
-                          fontSize: 11, color: FlockColors.textMuted)),
+                        fontSize: 11,
+                        color: FlockColors.textMuted,
+                      ),
+                    ),
+                  ),
                   if (onDelete != null || onPin != null)
                     _OverflowMenu(
                         isPinned: post.isPinned,
@@ -104,10 +113,16 @@ class PostCard extends StatelessWidget {
                   const Icon(Icons.image_outlined,
                       size: 13, color: FlockColors.textMuted),
                   const SizedBox(width: 4),
-                  Text(
-                    '${post.imageUrls.length} photo${post.imageUrls.length > 1 ? "s" : ""}',
-                    style: const TextStyle(
-                        fontSize: 12, color: FlockColors.textMuted),
+                  Flexible(
+                    child: Text(
+                      '${post.imageUrls.length} photo${post.imageUrls.length > 1 ? "s" : ""}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: FlockColors.textMuted,
+                      ),
+                    ),
                   ),
                 ]),
               ],

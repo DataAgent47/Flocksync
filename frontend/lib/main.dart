@@ -445,7 +445,9 @@ class _DashboardScreen extends StatelessWidget {
                           padding: const EdgeInsets.all(24),
                           child: Text(
                             label,
-                            textAlign: TextAlign.center
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),

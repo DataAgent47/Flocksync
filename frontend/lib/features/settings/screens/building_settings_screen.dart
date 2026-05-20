@@ -304,22 +304,25 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.middleground),
                 ),
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
                         property.inviteCode.isEmpty
                             ? '--- ---'
                             : property.inviteCode,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
                               fontWeight: FontWeight.w800,
                               letterSpacing: 2,
                             ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(
+                    ),
+                    IconButton(
                         tooltip: 'Copy code',
                         icon: const Icon(Icons.content_copy),
                         onPressed: () async {
@@ -335,7 +338,6 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                     ],
                   ),
                 ),
-              ),
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
