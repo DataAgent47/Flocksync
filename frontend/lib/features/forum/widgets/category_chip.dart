@@ -73,14 +73,19 @@ class CategoryFilterBar extends StatelessWidget {
 
           // ── Active category label (shows when a filter is selected) ──
           if (selected != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: Text(
-                _categoryLabel(selected!),
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: FlockColors.textSecondary,
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Text(
+                  _categoryLabel(selected!),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: FlockColors.textSecondary,
+                  ),
                 ),
               ),
             ),
@@ -120,16 +125,24 @@ class CategoryFilterBar extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: FlockColors.cream,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => _CategorySheet(
-        selected: selected,
-        categories: categories,
-        onSelected: (cat) {
-          Navigator.pop(ctx);
-          onSelected(cat);
-        },
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.55,
+        minChildSize: 0.4,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (_, scrollController) => _CategorySheet(
+          scrollController: scrollController,
+          selected: selected,
+          categories: categories,
+          onSelected: (cat) {
+            Navigator.pop(ctx);
+            onSelected(cat);
+          },
+        ),
       ),
     );
   }
@@ -148,11 +161,13 @@ class CategoryFilterBar extends StatelessWidget {
 // ─── Bottom sheet category picker ─────────────────────────────────────────────
 
 class _CategorySheet extends StatelessWidget {
+  final ScrollController scrollController;
   final PostCategory? selected;
   final void Function(PostCategory?) onSelected;
   final List<PostCategory> categories;
 
   const _CategorySheet({
+    required this.scrollController,
     required this.selected,
     required this.onSelected,
     required this.categories,
@@ -160,75 +175,69 @@ class _CategorySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle bar
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: FlockColors.tan,
-                borderRadius: BorderRadius.circular(2),
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final tiles = categories
+        .map(
+          (category) => _categoryItems.firstWhere(
+            (item) => item.category == category,
+          ),
+        )
+        .map(
+          (item) => _CategoryTile(
+            icon: item.icon,
+            label: item.label,
+            isSelected: selected == item.category,
+            onTap: () => onSelected(item.category),
+          ),
+        )
+        .toList();
+
+    return ListView(
+      controller: scrollController,
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 32 + bottomInset),
+      children: [
+        Center(
+          child: Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: FlockColors.tan,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Filter by Category',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: FlockColors.darkGreen,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...tiles,
+        const SizedBox(height: 8),
+        if (selected != null)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => onSelected(null),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: FlockColors.darkGreen,
+                side: const BorderSide(color: FlockColors.tan),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text(
+                'Clear Filter',
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
-          const SizedBox(height: 20),
-
-          const Text(
-            'Filter by Category',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: FlockColors.darkGreen,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Category tiles
-          ...categories
-              .map(
-                (category) => _categoryItems.firstWhere(
-                  (item) => item.category == category,
-                ),
-              )
-              .map(
-                (item) => _CategoryTile(
-                  icon: item.icon,
-                  label: item.label,
-                  isSelected: selected == item.category,
-                  onTap: () => onSelected(item.category),
-                ),
-              ),
-
-          const SizedBox(height: 8),
-
-          // Clear filter
-          if (selected != null)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => onSelected(null),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: FlockColors.darkGreen,
-                  side: const BorderSide(color: FlockColors.tan),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text(
-                  'Clear Filter',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -271,15 +280,18 @@ class _CategoryTile extends StatelessWidget {
               color: isSelected ? FlockColors.cream : FlockColors.midGreen,
             ),
             const SizedBox(width: 14),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? FlockColors.cream : FlockColors.darkGreen,
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? FlockColors.cream : FlockColors.darkGreen,
+                ),
               ),
             ),
-            const Spacer(),
             if (isSelected)
               const Icon(Icons.check, size: 18, color: FlockColors.cream),
           ],
