@@ -8,6 +8,7 @@ class SettingsUserProfile {
   final String propertyId;
   final String photoUrl;
   final bool hideApartmentNumber;
+  final String ownershipStatus;
 
   const SettingsUserProfile({
     required this.firstName,
@@ -18,7 +19,8 @@ class SettingsUserProfile {
     required this.apartmentNumber,
     required this.propertyId,
     required this.photoUrl,
-    required this.hideApartmentNumber
+    required this.hideApartmentNumber,
+    required this.ownershipStatus,
   });
 
   factory SettingsUserProfile.fromMap(Map<String, dynamic> data) {
@@ -31,7 +33,8 @@ class SettingsUserProfile {
       apartmentNumber: (data['apt_number'] as String? ?? '').trim(),
       photoUrl: (data['photo_url'] as String? ?? '').trim(),
       propertyId: (data['property_id'] as String? ?? '').trim(),
-      hideApartmentNumber: (data['hide_apt_number'] as bool? ?? false)
+      hideApartmentNumber: (data['hide_apt_number'] as bool? ?? false),
+      ownershipStatus: (data['ownership_status'] as String? ?? 'unverified').trim(),
     );
   }
 }

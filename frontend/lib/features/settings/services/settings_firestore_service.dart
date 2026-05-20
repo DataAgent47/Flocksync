@@ -1,6 +1,8 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/settings_property_info.dart';
 import '../models/settings_user_profile.dart';
@@ -110,6 +112,12 @@ class SettingsFirestoreService {
         return null;
       }
       return data['is_verified'] as bool?;
+    });
+  }
+  Stream<Map<String, dynamic>?> ownershipStatusStream(String uid) {
+    return _firestore.collection('users').doc(uid).snapshots().map((doc) {
+      final data = doc.data();
+      return data?['owner_verification'] as Map<String, dynamic>?;
     });
   }
 
@@ -283,5 +291,56 @@ class SettingsFirestoreService {
       'verified_rejected': false,
       'updated_at': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+  Future<void> uploadAndVerifyDocument({
+    required String uid,
+    required String propertyId,
+    required String role,
+    required Uint8List fileBytes,
+    required String fileName,
+  }) async {
+    final supabase = Supabase.instance.client;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final storagePath = 'verifications/$uid/${timestamp}_$fileName';
+
+    await supabase.storage.from('documents').uploadBinary(
+          storagePath,
+          fileBytes,
+        );
+
+    final isManager = role.trim() == 'manager';
+    final collection = isManager ? 'managers' : 'residents';
+    final docId = '${propertyId.trim()}_$uid';
+
+    await _firestore.collection(collection).doc(docId).set({
+      'owner_verification': {
+        'status': 'pending',
+        'storage_path': storagePath,
+        'submitted_at': FieldValue.serverTimestamp(),
+        'is_verified': false,
+      }
+    }, SetOptions(merge: true));
+  }
+  Future<void> updateVerificationPath(String uid, String storagePath) async {
+    await _firestore.collection('users').doc(uid).update({
+      'owner_verification': {
+        'status': 'pending',
+        'storage_path': storagePath,
+        'submitted_at': FieldValue.serverTimestamp(),
+      }
+    });
+  }
+  Future<void> updateOwnershipStatus(String uid, String status) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'owner_verification': {
+          'status': status,
+          'submitted_at': FieldValue.serverTimestamp(),
+        }
+      });
+    } catch (e) {
+      print('Error updating ownership status: $e');
+      throw e;
+    }
   }
 }
