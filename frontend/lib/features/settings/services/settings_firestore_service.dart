@@ -141,7 +141,7 @@ class SettingsFirestoreService {
     required String lastName,
     required String contactEmail,
     required String phone,
-    String? photoBase64
+    String? photoUrl
   }) async {
     final data = {
       'first_name': firstName.trim(),
@@ -151,8 +151,8 @@ class SettingsFirestoreService {
       'updated_at': FieldValue.serverTimestamp(),
     };
 
-    if (photoBase64 != null && photoBase64.isNotEmpty) {
-      data['photo_base64'] = photoBase64;
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      data['photo_url'] = photoUrl;
     }
 
     await _firestore

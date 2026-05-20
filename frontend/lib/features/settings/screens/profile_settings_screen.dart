@@ -5,7 +5,8 @@ import '../../../core/theme/flock_theme.dart';
 import '../../../core/widgets/flock_message_banner.dart';
 import '../controllers/settings_controller.dart';
 
-import 'dart:convert';
+import 'dart:io';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:image_picker/image_picker.dart';
 
@@ -49,22 +50,21 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   PhoneNumber _phoneNumber = PhoneNumber(isoCode: 'US');
   Key _phoneInputKey = const ValueKey('profile_phone_initial');
   // Later add a controller for the URL
-  String? _originalPhotoBase64;
+  String? _originalPhotoUrl;
   String? _photoUrl;
+  bool _isUploadingPhoto = false;
 
   bool _hydrated = false;
   bool _isHydrating = false;
   String? _hydrationError;
   String? _statusMessage;
   bool _statusIsError = false;
-  bool _isUploadingPhoto = false;
-  String? _photoBase64;
   bool get _hasUnsavedChanges {
     return _firstNameController.text.trim() != _originalFirstName ||
       _lastNameController.text.trim() != _originalLastName ||
       _contactEmailController.text.trim() != _originalEmail ||
       _phoneController.text.trim() != _originalPhone ||
-      (_photoBase64 ?? '') != (_originalPhotoBase64 ?? '');
+      (_photoUrl ?? '') != (_originalPhotoUrl ?? '');
   }
 
   @override
@@ -118,8 +118,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       _originalLastName = profile.lastName;
       _originalEmail = profile.contactEmail;
       _originalPhone = profile.phone;
-      _photoBase64 = profile.photoBase64;
-      _originalPhotoBase64 = profile.photoBase64;
+      _originalPhotoUrl = profile.photoUrl;
+      _photoUrl = profile.photoUrl;
 
       final storedPhone = profile.phone.trim();
       if (storedPhone.isNotEmpty) {
@@ -190,7 +190,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       return;
     }
 
-    _originalPhotoBase64 = _photoBase64;
+    _originalPhotoUrl = _photoUrl;
 
     setState(() {
       _statusMessage = null;
@@ -203,7 +203,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       lastName: _lastNameController.text,
       contactEmail: _contactEmailController.text,
       phone: _phoneNumber.phoneNumber ?? _phoneController.text,
-      photoBase64: _photoBase64
+      photoUrl: _photoUrl
     );
 
     if (!mounted) {
@@ -218,7 +218,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         _originalLastName = _lastNameController.text.trim();
         _originalEmail = _contactEmailController.text.trim();
         _originalPhone = _phoneController.text.trim();
-        _originalPhotoBase64 = _photoBase64;
+        _originalPhotoUrl = _photoUrl;
       });
     } else {
       setState(() {
@@ -235,26 +235,47 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
       final picked = await picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 25,
-        maxWidth: 250,
+        imageQuality: 85,
       );
 
       if (picked == null) return;
 
       setState(() {
         _isUploadingPhoto = true;
+        _statusMessage = null;
       });
 
+      final supabase = Supabase.instance.client;
+
       final bytes = await picked.readAsBytes();
-      final base64Image = base64Encode(bytes);
+
+      final fileName =
+          '${widget.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      final response = await supabase.storage
+          .from('profile-pictures')
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+
+      final publicUrl = supabase.storage
+          .from('profile-pictures')
+          .getPublicUrl(fileName);
 
       setState(() {
-        _photoBase64 = base64Image;
+        _photoUrl = publicUrl;
         _isUploadingPhoto = false;
       });
     } catch (e) {
+      debugPrint('UPLOAD ERROR: $e');
+
       setState(() {
-        _statusMessage = 'Failed to upload image.';
+        _statusMessage = 'Failed to upload image: $e';
         _statusIsError = true;
         _isUploadingPhoto = false;
       });
@@ -267,8 +288,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       _lastNameController.text = _originalLastName;
       _contactEmailController.text = _originalEmail;
       _phoneController.text = _originalPhone;
-
-      _photoBase64 = _originalPhotoBase64;
+      _photoUrl = _originalPhotoUrl;
     });
   }
 
@@ -403,14 +423,10 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               child: CircleAvatar(
                                 radius: 52,
                                 backgroundColor: FlockColors.tan,
-                                backgroundImage: (_photoBase64 ?? '').isNotEmpty
-                                  ? (_photoBase64!.startsWith('http')
-                                      ? NetworkImage(_photoBase64!)
-                                      : MemoryImage(
-                                          base64Decode(_photoBase64!),
-                                        )) as ImageProvider
+                                backgroundImage: (_photoUrl ?? '').isNotEmpty
+                                  ? NetworkImage(_photoUrl!)
                                   : null,
-                                child: (_photoBase64 ?? '').isEmpty
+                                child: (_photoUrl ?? '').isEmpty
                                     ? const Icon(
                                         Icons.person,
                                         size: 52,

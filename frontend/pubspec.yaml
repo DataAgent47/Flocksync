@@ -48,6 +48,7 @@ dependencies:
   latlong2: ^0.9.1
 
   # Image picking
+  supabase_flutter: ^2.0.0
   image_picker: ^1.0.0
 
   # Phone number input

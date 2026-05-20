@@ -2,7 +2,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/theme/flock_theme.dart';
 import 'core/widgets/settings_tile.dart';
@@ -16,11 +17,14 @@ import 'features/onboarding/services/onboarding_firestore_service.dart';
 import 'features/settings/screens/settings_screen.dart';
 import 'features/calendar/screens/personal_calendar_page.dart';
 import 'features/users/screens/users_screen.dart';
-import 'dart:convert';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Supabase.initialize(
+    url: 'https://hypdascxujnjreizrblr.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cGRhc2N4dWpuanJlaXpyYmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDMzMDAsImV4cCI6MjA5MzYxOTMwMH0.OHKyuoKadWV61dzttufLJHSsBGMRGoh7hCCTinwVhLc',
+  );
   // ── Local emulator (dev only) ──────────────────────────────────────────
   const bool kUseEmulator = bool.fromEnvironment('USE_EMULATOR');
   if (kUseEmulator) {
@@ -50,8 +54,8 @@ class _AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+    return StreamBuilder<fb_auth.User?>(
+      stream: fb_auth.FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -103,7 +107,7 @@ class _AuthGate extends StatelessWidget {
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.user, this.initialIndex = 0});
 
-  final User user;
+  final fb_auth.User user;
   final int initialIndex;
 
   @override
@@ -297,7 +301,7 @@ class _DashboardScreen extends StatelessWidget {
   final String zipCode;
   final bool isManagement;
   final bool isVerified;
-  final User user;
+  final fb_auth.User user;
   final bool isRejected;
 
   const _DashboardScreen({
@@ -572,13 +576,13 @@ class ActiveAppointmentsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final uid = fb_auth.FirebaseAuth.instance.currentUser!.uid;
 
     final stream = FirebaseFirestore.instance
       .collection('users')
       .doc(uid)
       .collection('events')
-      .orderBy('date')
+      .orderBy('dateKey')
       .snapshots();
 
     return StreamBuilder<QuerySnapshot>(
@@ -601,7 +605,7 @@ class ActiveAppointmentsWidget extends StatelessWidget {
 
             return ListTile(
               title: Text(data["title"] ?? ""),
-              subtitle: Text("${data["date"]} • ${data["time"]}"),
+              subtitle: Text("${data["dateKey"]} • ${data["time"]}"),
               trailing: IconButton(
                 icon: const Icon(Icons.delete, color: Colors.red),
                 onPressed: () async {
@@ -648,7 +652,7 @@ class _HoverProfileImageState extends State<_HoverProfileImage> {
               child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection('users')
-                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                    .doc(fb_auth.FirebaseAuth.instance.currentUser!.uid)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
@@ -657,32 +661,22 @@ class _HoverProfileImageState extends State<_HoverProfileImage> {
 
                   final data = snapshot.data?.data();
 
-                  final photoBase64 =
-                      (data?['photo_base64'] as String? ?? '').trim();
+                  final photoUrl =
+                      (data?['photo_url'] as String? ?? '').trim();
 
-                  if (photoBase64.isEmpty) {
+                  if (photoUrl.isEmpty) {
                     return _defaultAvatar();
                   }
 
-                  try {
-                    if (photoBase64.startsWith('http')) {
-                      return Image.network(
-                        photoBase64,
-                        fit: BoxFit.cover,
-                        width: 40,
-                        height: 40,
-                      );
-                    }
-
-                    return Image.memory(
-                      base64Decode(photoBase64),
-                      fit: BoxFit.cover,
-                      width: 40,
-                      height: 40,
-                    );
-                  } catch (_) {
-                    return _defaultAvatar();
-                  }
+                  return Image.network(
+                    photoUrl,
+                    fit: BoxFit.cover,
+                    width: 40,
+                    height: 40,
+                    errorBuilder: (_, __, ___) {
+                      return _defaultAvatar();
+                    },
+                  );
                 },
               ),
             ),
@@ -864,7 +858,7 @@ class _UsersScreen extends StatelessWidget {
 // ─── Settings screen ───────────────────────────────────────────────────────────────
 
 class _SettingsScreen extends StatelessWidget {
-  final User user;
+  final fb_auth.User user;
 
   const _SettingsScreen({required this.user});
 

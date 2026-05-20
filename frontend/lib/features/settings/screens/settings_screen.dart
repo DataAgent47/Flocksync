@@ -10,10 +10,6 @@ import 'building_settings_screen.dart';
 import 'profile_settings_screen.dart';
 import 'security_settings_screen.dart';
 
-import 'dart:convert';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class SettingsScreen extends StatefulWidget {
   final User user;
   final bool showBackButton;
@@ -106,44 +102,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               width: 2,
                             ),
                           ),
-                          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                            stream: FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(widget.user.uid)
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              final data = snapshot.data?.data();
-
-                              final photoBase64 =
-                                  (data?['photo_base64'] as String? ?? '').trim();
-
-                              ImageProvider? imageProvider;
-
-                              if (photoBase64.isNotEmpty) {
-                                try {
-                                  if (photoBase64.startsWith('http')) {
-                                    imageProvider = NetworkImage(photoBase64);
-                                  } else {
-                                    imageProvider = MemoryImage(
-                                      base64Decode(photoBase64),
-                                    );
-                                  }
-                                } catch (_) {}
-                              }
-
-                              return CircleAvatar(
-                                radius: 30,
-                                backgroundColor: FlockColors.tan,
-                                backgroundImage: imageProvider,
-                                child: imageProvider == null
-                                    ? const Icon(
-                                        Icons.person,
-                                        size: 30,
-                                        color: FlockColors.darkGreen,
-                                      )
-                                    : null,
-                              );
-                            },
+                          child: CircleAvatar(
+                            radius: 30,
+                            backgroundColor: FlockColors.tan,
+                            backgroundImage: profile != null &&
+                                    profile.photoUrl.isNotEmpty
+                                ? NetworkImage(profile.photoUrl)
+                                : null,
+                            child: profile == null || profile.photoUrl.isEmpty
+                                ? const Icon(
+                                    Icons.person,
+                                    size: 30,
+                                    color: FlockColors.darkGreen,
+                                  )
+                                : null,
                           ),
                         ),
                         const SizedBox(width: 12),
