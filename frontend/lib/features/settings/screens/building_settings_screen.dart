@@ -433,7 +433,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
               alignment: Alignment.centerRight,
               child: FilledButton.icon(
                 onPressed: _pickVerificationDocument,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.upload_file),
                 label: const Text('Update Document'),
               ),
             ),
@@ -458,7 +458,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
               alignment: Alignment.centerRight,
               child: FilledButton.icon(
                 onPressed: _pickVerificationDocument,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.upload_file),
                 label: const Text('Re-upload Document'),
               ),
             ),
