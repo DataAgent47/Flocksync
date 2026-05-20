@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/flock_theme.dart';
 import '../../../core/widgets/flock_message_banner.dart';
@@ -41,6 +42,55 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
           : (widget.controller.errorMessage ?? 'Could not reroll invite code.');
       _statusIsError = !ok;
     });
+  }
+  Future<void> _pickVerificationDocument() async {
+    try {
+      // 1. Call the base platform picker directly
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+        withData: true, // Crucial for Flutter Web! Otherwise result.files.first.bytes will return null
+      );
+
+      // 2. Safely check if a file was returned without looking for a physical '.path'
+      if (result != null && result.files.isNotEmpty) {
+        final pickedFile = result.files.first;
+        final fileName = pickedFile.name;
+        
+        setState(() {
+          _statusMessage = 'Selected file: $fileName';
+          _statusIsError = false;
+        });
+
+        // 3. Handle data safely depending on environment
+        if (pickedFile.bytes != null) {
+          // This is what will trigger on Chrome/Web!
+          final fileBytes = pickedFile.bytes;
+          debugPrint('Web file loaded: ${fileBytes!.length} bytes');
+          
+          // TODO: Pass bytes to your controller for upload
+          // await widget.controller.uploadVerificationBytes(
+          //   uid: widget.uid,
+          //   bytes: fileBytes,
+          //   fileName: fileName,
+          // );
+        } else if (pickedFile.path != null) {
+          // This would handle native fallback (mobile/desktop app)
+          debugPrint('Native file path: ${pickedFile.path}');
+        }
+
+      } else {
+        setState(() {
+          _statusMessage = 'File picking canceled.';
+          _statusIsError = true;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _statusMessage = 'Error picking file: $e';
+        _statusIsError = true;
+      });
+    }
   }
 
   TextSpan _verificationMessage({
@@ -436,6 +486,37 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                           );
                         },
                       ),
+                    Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Test Document Picker',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: _pickVerificationDocument,
+                              icon: const Icon(Icons.folder_open),
+                              label: const Text('Pick Test File'),
+                            ),
+                            if (_statusMessage != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                _statusMessage!,
+                                style: TextStyle(
+                                  color: _statusIsError ? Colors.red : Colors.green,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
                     const Divider(height: 18),
                     _infoRow(
                       label: 'Apartment',
