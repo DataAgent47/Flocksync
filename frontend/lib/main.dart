@@ -673,7 +673,7 @@ class _HoverProfileImageState extends State<_HoverProfileImage> {
                     fit: BoxFit.cover,
                     width: 40,
                     height: 40,
-                    errorBuilder: (_, __, ___) {
+                    errorBuilder: (_, _, _) {
                       return _defaultAvatar();
                     },
                   );
