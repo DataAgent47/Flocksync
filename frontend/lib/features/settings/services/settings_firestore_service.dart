@@ -298,23 +298,28 @@ class SettingsFirestoreService {
     
     final storagePath = 'verifications/$uid/${timestamp}_$fileName';
 
-    // 1. Upload to the private Supabase bucket
     await supabase.storage.from('documents').uploadBinary(
           storagePath,
           fileBytes,
         );
 
-    // Determine target collection based on role
     final isManager = role.trim() == 'manager';
     final collection = isManager ? 'managers' : 'residents';
     final docId = '${propertyId.trim()}_$uid';
 
-    // 2. Save the PATH to the correct Firestore target collection
     await _firestore.collection(collection).doc(docId).set({
       'verification_storage_path': storagePath, 
-      'is_verified': false, // Explicitly keep false or set to a pending state string
-      'verified_rejected': false, // Reset rejection flag if they re-upload
+      'is_verified': false,
+      'verified_rejected': false,
       'submitted_at': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+  Future<void> updateVerificationPath(String uid, String storagePath) async {
+    
+    await _firestore.collection('users').doc(uid).update({
+      'verificationDocumentPath': storagePath,
+      'verificationStatus': 'pending',
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }
