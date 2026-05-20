@@ -177,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 20),
                 SettingsTile(
                   title: 'Profile',
-                  subtitle: 'Edit name, contact email, and phone number',
+                  subtitle: 'Edit picture, name, contact email, and phone number',
                   leadingIcon: Icons.person_outline,
                   onTap: () {
                     Navigator.push(

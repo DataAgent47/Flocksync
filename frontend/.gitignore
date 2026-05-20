@@ -132,7 +132,6 @@ app.*.symbols
 *.p8
 google-services.json
 GoogleService-Info.plist
-firebase_options.dart
 
 # IDE - VSCode
 .vscode/*

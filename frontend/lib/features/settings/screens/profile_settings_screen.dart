@@ -410,32 +410,98 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     Center(
                       child: Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: FlockColors.darkGreen,
-                                width: 2,
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(60),
+                                  onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(3),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: FlockColors.darkGreen,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.08),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 52,
+                                          backgroundColor: FlockColors.tan,
+                                          backgroundImage: (_photoUrl ?? '').isNotEmpty
+                                              ? NetworkImage(_photoUrl!)
+                                              : null,
+                                          child: (_photoUrl ?? '').isEmpty
+                                              ? const Icon(
+                                                  Icons.person,
+                                                  size: 52,
+                                                  color: FlockColors.darkGreen,
+                                                )
+                                              : null,
+                                        ),
+
+                                        if (_isUploadingPhoto)
+                                          Container(
+                                            width: 104,
+                                            height: 104,
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withValues(alpha: 0.45),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Center(
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
+
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: FlockColors.darkGreen,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Text(
+                            _isUploadingPhoto
+                                ? 'Uploading photo...'
+                                : 'Tap icon to upload',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
                             ),
-                            child: GestureDetector(
-                              onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
-                              child: CircleAvatar(
-                                radius: 52,
-                                backgroundColor: FlockColors.tan,
-                                backgroundImage: (_photoUrl ?? '').isNotEmpty
-                                  ? NetworkImage(_photoUrl!)
-                                  : null,
-                                child: (_photoUrl ?? '').isEmpty
-                                    ? const Icon(
-                                        Icons.person,
-                                        size: 52,
-                                          color: FlockColors.darkGreen,
-                                      )
-                                    : null,
-                              ),
-                            )
                           ),
                         ],
                       ),
