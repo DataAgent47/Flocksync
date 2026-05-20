@@ -5,7 +5,6 @@ import '../../../core/theme/flock_theme.dart';
 import '../../../core/widgets/flock_message_banner.dart';
 import '../controllers/settings_controller.dart';
 
-import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:image_picker/image_picker.dart';
@@ -252,7 +251,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       final fileName =
           '${widget.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      final response = await supabase.storage
+      await supabase.storage
           .from('profile-pictures')
           .uploadBinary(
             fileName,
@@ -332,6 +331,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               },
             );
 
+            if (!context.mounted) return;
             if (shouldLeave == true) {
               _revertChanges();
               Navigator.pop(context);
@@ -366,6 +366,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   );
 
+                  if (!context.mounted) return;
                   if (shouldLeave == true) {
                     _revertChanges();
                     Navigator.pop(context);

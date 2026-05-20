@@ -5,8 +5,6 @@ import '../models/settings_property_info.dart';
 import '../models/settings_user_profile.dart';
 import '../services/settings_firestore_service.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class SettingsController extends ChangeNotifier {
   final AuthService _authService;
   final SettingsFirestoreService _firestoreService;
