@@ -302,23 +302,63 @@ app.get('/api/maps/verify', async (req, res) => {
 //--------------------------- profile picture route
 // for all profile picture uploads
 // dont need get request since this is stored publically, just call photo_url on the front
-app.post('/api/user/update-profile-picture', async (req, res) => {
-   const { userId, photoUrl } = req.body
-   if (!userId || !photoUrl) {
-      return res.status(400).json({ error: 'Missing userId or photoUrl' })
-   }
+app.post(
+   '/api/user/update-profile-picture',
+   upload.single('image'),
+   async (req, res) => {
+      const { userId } = req.body
+      const file = req.file
 
-   try {
-      await db.collection('users').doc(userId).set(
-         {
-            photo_url: photoUrl,
-         },
-         { merge: true },
-      )
-   } catch (error) {
-      res.status(500).json({ error: error.message })
-   }
-})
+      if (!userId || !file) {
+         return res.status(400).json({ error: 'Missing userId or image file.' })
+      }
+
+      try {
+         const userDoc = await db.collection('users').doc(userId).get()
+         if (!userDoc.exists) {
+            return res.status(404).json({ error: 'User not found.' })
+         }
+
+         const processedBuffer = await sharp(file.buffer)
+            .resize(400, 400, { fit: 'cover' })
+            .jpeg({ quality: 85 })
+            .toBuffer()
+
+         const fileName = `${userId}/profile_${Date.now()}.jpg`
+
+         const { data, error: uploadError } = await supabase.storage
+            .from('profile-pictures')
+            .upload(fileName, processedBuffer, {
+               contentType: 'image/jpeg',
+               upsert: true,
+            })
+
+         if (uploadError) throw uploadError
+
+         const { data: publicUrlData } = supabase.storage
+            .from('profile-pictures')
+            .getPublicUrl(fileName)
+
+         const publicImageLink = publicUrlData.publicUrl
+
+         await db.collection('users').doc(userId).set(
+            {
+               photo_url: publicImageLink,
+            },
+            { merge: true },
+         )
+
+         return res.json({
+            success: true,
+            photoUrl: publicImageLink,
+            message: 'Profile picture updated successfully!',
+         })
+      } catch (error) {
+         console.error('Profile upload error:', error.message)
+         return res.status(500).json({ error: error.message })
+      }
+   },
+)
 //----------------------------------verification documents(not resident verification)
 // verification docs using supabase cloud storage 0.5gb limit
 app.post(
