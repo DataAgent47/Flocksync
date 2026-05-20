@@ -54,10 +54,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
       if (result != null && result.files.isNotEmpty) {
         final pickedFile = result.files.first;
         
-        setState(() {
-          _statusMessage = 'Uploading ${pickedFile.name}...';
-          _statusIsError = false;
-        });
+        setState(() => _statusMessage = 'Uploading ${pickedFile.name}...');
         
         final ok = await widget.controller.uploadVerificationDocument(
           uid: widget.uid,
@@ -65,16 +62,31 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
           fileName: pickedFile.name,
         );
 
-        setState(() {
-          _statusMessage = ok ? 'Upload successful!' : 'Upload failed.';
-          _statusIsError = !ok;
-        });
+        if (!mounted) return;
+        
+        // This closes the showSnackBar call properly
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              ok ? 'Upload successful!' : 'Upload failed.',
+              style: const TextStyle(color: Colors.white), 
+            ),
+            backgroundColor: ok ? FlockColors.darkGreen : FlockColors.errorRed,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            showCloseIcon: true, 
+          ),
+        ); 
+        
+        setState(() => _statusMessage = null);
       }
     } catch (e) {
-      setState(() {
-        _statusMessage = 'Error: $e';
-        _statusIsError = true;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: FlockColors.errorRed),
+      );
     }
   }
 
