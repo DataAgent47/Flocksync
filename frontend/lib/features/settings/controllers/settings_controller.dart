@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/services/auth_service.dart';
 import '../models/settings_property_info.dart';
@@ -56,6 +58,40 @@ class SettingsController extends ChangeNotifier {
       propertyId: propertyId,
       role: role,
     );
+  }
+  Stream<Map<String, dynamic>?> ownershipStatusStream(String uid) {
+    return _firestoreService.ownershipStatusStream(uid);
+  }
+
+  Future<bool> uploadVerificationDocument({
+    required String uid,
+    required Uint8List fileBytes,
+    required String fileName,
+  }) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String storagePath = '$uid/$timestamp\_$fileName';
+
+      await supabase.storage.from('verification-documents').uploadBinary(
+            storagePath,
+            fileBytes,
+            fileOptions: FileOptions(
+              contentType: fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+              upsert: false,
+            ),
+          );
+
+     
+      await _firestoreService.updateVerificationPath(uid, storagePath);
+
+      await _firestoreService.updateOwnershipStatus(uid, 'pending');
+
+      return true;
+    } catch (e) {
+      print('Supabase storage exception: $e');
+      return false;
+    }
   }
 
   Future<SettingsUserProfile?> hydrateProfile(String uid) {

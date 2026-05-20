@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -13,6 +14,7 @@ import '../../../core/theme/flock_theme.dart';
 import '../services/maps_service.dart';
 import '../services/onboarding_firestore_service.dart';
 import '../services/onboarding_flow_state.dart';
+import '../services/management_verification_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final User? user;
@@ -51,6 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String? _activeInviteCode;
   bool _isSyncingStep = false;
   bool _isSubmittingInviteCode = false;
+  PlatformFile? _pickedFile;
 
   @override
   void initState() {
@@ -226,6 +229,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       }
     } catch (error) {
       _setFlowError(_friendlyError(error));
+    }
+  }
+  Future<void> _pickManagementDocument() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+      withData: true,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        _pickedFile = result.files.first;
+      });
     }
   }
 
@@ -1420,17 +1436,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           icon: Icons.verified_user_outlined,
           title: 'Management Verification',
         ),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.middleground.withAlpha(40),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.middleground),
+            side: BorderSide(
+              color: _pickedFile == null ? AppColors.middleground : FlockColors.darkGreen,
+              width: 2,
+            ),
           ),
-          child: Text(
-            'Please provide proof of your role as "$role". Some examples include: tax records, utility bills.',
-            style: Theme.of(context).textTheme.bodyLarge,
-            textAlign: TextAlign.center,
+          child: InkWell(
+            onTap: _pickManagementDocument,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Icon(
+                    _pickedFile == null ? Icons.cloud_upload : Icons.check_circle,
+                    size: 48,
+                    color: _pickedFile == null ? AppColors.middleground : FlockColors.darkGreen,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _pickedFile == null
+                        ? 'Upload proof of your role as "$role".\n(Tax records, utility bills)'
+                        : 'File selected: ${_pickedFile!.name}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
         // Later add file or image uploads
@@ -1453,18 +1490,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: FilledButton(
-                onPressed: _managementRoleVerified
-                    ? () {
-                        _updateFlow(_flow.goTo(10));
-                        setState(() {
-                          _managementRoleVerified = false;
-                        });
+                onPressed: (_managementRoleVerified && _pickedFile != null)
+                    ? () async {
+                        setState(() => _isSyncingStep = true);
+
+                        // 2. Execute the service
+                        final success = await VerificationService().uploadVerificationDocument(
+                          uid: widget.user!.uid,
+                          fileBytes: _pickedFile!.bytes!,
+                          fileName: _pickedFile!.name,
+                        );
+
+                        if (success) {
+                          _updateFlow(_flow.goTo(10));
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Upload failed. Please try again.')),
+                          );
+                        }
+
+                        setState(() => _isSyncingStep = false);
                       }
                     : null,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Continue'),
+                child: _isSyncingStep 
+                    ? const CircularProgressIndicator(color: Colors.white) 
+                    : const Text('Continue'),
               ),
             ),
           ],

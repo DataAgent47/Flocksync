@@ -2,6 +2,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/flock_theme.dart';
 import '../../../core/widgets/flock_message_banner.dart';
@@ -27,6 +29,53 @@ class BuildingSettingsScreen extends StatefulWidget {
 class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
   String? _statusMessage;
   bool _statusIsError = false;
+
+  Future<void> _pickVerificationDocument() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final pickedFile = result.files.first;
+        
+        setState(() => _statusMessage = 'Uploading ${pickedFile.name}...');
+        
+        final ok = await widget.controller.uploadVerificationDocument(
+          uid: widget.uid,
+          fileBytes: pickedFile.bytes!,
+          fileName: pickedFile.name,
+        );
+
+        if (!mounted) return;
+  
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              ok ? 'Upload successful!' : 'Upload failed.',
+              style: const TextStyle(color: Colors.white), 
+            ),
+            backgroundColor: ok ? FlockColors.darkGreen : FlockColors.errorRed,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            showCloseIcon: true, 
+          ),
+        ); 
+        
+        setState(() => _statusMessage = null);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: FlockColors.errorRed),
+      );
+    }
+  }
+
 
   Future<void> _rerollInviteCode() async {
     final ok = await widget.controller.rerollInviteCode(uid: widget.uid);
@@ -359,7 +408,81 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
       },
     );
   }
+  Widget _getOwnershipStatusWidget(String status) {
+    final normalizedStatus = status.toLowerCase().trim();
 
+    switch (normalizedStatus) {
+      case 'verified':
+        return const Text('Verified', style: TextStyle(color: FlockColors.darkGreen, fontWeight: FontWeight.w600));
+
+      case 'pending':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Verification Pending', 
+              style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Upload a different file if you made a mistake',
+              style: TextStyle(fontSize: 12, color: FlockColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: _pickVerificationDocument,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Update Document'),
+            ),
+          ],
+        );
+
+      case 'rejected':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Verification Rejected', 
+              style: TextStyle(color: FlockColors.errorRed, fontWeight: FontWeight.w700)
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Upload a more clear image with a matching address',
+              style: TextStyle(fontSize: 12, color: FlockColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: _pickVerificationDocument,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Re-upload Document'),
+            ),
+          ],
+        );
+
+      case 'unverified':
+      default:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Verification required', 
+              style: TextStyle(color: FlockColors.errorRed, fontWeight: FontWeight.w600)
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Upload any official document that contains the address of the building. ex: Property tax document',
+              style: TextStyle(fontSize: 12, color: FlockColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: _pickVerificationDocument,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Upload Document'),
+            ),
+          ],
+        );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -459,6 +582,29 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                     else
                       _infoRow(label: 'Role', value: 'Resident'),
                     const SizedBox(height: 8),
+                    const Divider(height: 18),
+                    StreamBuilder<String?>(
+                      stream: widget.controller.managerRoleStream(
+                        uid: widget.uid,
+                        propertyId: profile.propertyId,
+                      ),
+                      builder: (context, roleSnapshot) {
+                        if (roleSnapshot.data?.trim() == 'Building Owner') {
+                          return _infoRow(
+                            label: 'Ownership',
+                            value: StreamBuilder<Map<String, dynamic>?>(
+                              stream: widget.controller.ownershipStatusStream(widget.uid),
+                              builder: (context, snapshot) {
+                                final status = snapshot.data?['status'] as String? ?? 'unverified';
+                                return _getOwnershipStatusWidget(status);
+                              },
+                            ),
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
                     Card(
                       child: SwitchListTile(
                         title: const Text('Hide apartment number from other residents'),
