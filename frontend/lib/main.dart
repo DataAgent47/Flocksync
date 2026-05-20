@@ -21,11 +21,21 @@ import 'features/users/screens/users_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Read Supabase configuration from env
+  const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://hypdascxujnjreizrblr.supabase.co',
+  );
+  const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cGRhc2N4dWjuanJlaXpyYmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDMzMDAsImV4cCI6MjA5MzYxOTMwMH0.OHKyuoKadWV61dzttufLJHSsBGMRGoh7hCCTinwVhLc',
+  );
+
   await Supabase.initialize(
-    // API URL
-    url: 'https://hypdascxujnjreizrblr.supabase.co',
-    // Public Anon API Key
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cGRhc2N4dWpuanJlaXpyYmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDMzMDAsImV4cCI6MjA5MzYxOTMwMH0.OHKyuoKadWV61dzttufLJHSsBGMRGoh7hCCTinwVhLc',
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
   // ── Local emulator (dev only) ──────────────────────────────────────────
   const bool kUseEmulator = bool.fromEnvironment('USE_EMULATOR');
