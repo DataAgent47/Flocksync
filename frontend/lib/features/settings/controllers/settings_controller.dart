@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 
 import '../../auth/services/auth_service.dart';
 import '../models/settings_property_info.dart';
@@ -56,6 +57,27 @@ class SettingsController extends ChangeNotifier {
       propertyId: propertyId,
       role: role,
     );
+  }
+
+  Future<bool> uploadVerificationDocument({
+    required String uid,
+    required String propertyId,
+    required String role,
+    required Uint8List fileBytes, // Switched from String filePath
+    required String fileName,    // Added to preserve document extensions (.pdf, .png)
+  }) async {
+    return _runAction(() async {
+      // Calls the aligned service signature targeting private buckets
+      await _firestoreService.uploadAndVerifyDocument(
+        uid: uid,
+        propertyId: propertyId,
+        role: role,
+        fileBytes: fileBytes,
+        fileName: fileName,
+      );
+      
+      successMessage = 'Verification document uploaded successfully. Pending review.';
+    });
   }
 
   Future<SettingsUserProfile?> hydrateProfile(String uid) {
