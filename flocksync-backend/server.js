@@ -3,11 +3,31 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 // import mongoose from 'mongoose'
 import admin from 'firebase-admin'
-import serviceAccount from './serviceAccountKey.json' with { type: 'json' }
+import fs from 'fs'
 import axios from 'axios'
 import { createClient } from '@supabase/supabase-js'
 import multer from 'multer'
 import sharp from 'sharp'
+
+// Load Firebase service account by using an environemnt variable or serviceAccountKey.json file.
+let serviceAccount
+if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+   try {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+   } catch (err) {
+      console.error('Failed to read FIREBASE_SERVICE_ACCOUNT_JSON:', err)
+   }
+} else if (fs.existsSync('./serviceAccountKey.json')) {
+   try {
+      serviceAccount = JSON.parse(fs.readFileSync('./serviceAccountKey.json', 'utf8'))
+   } catch (err) {
+      console.error('Failed to read ./serviceAccountKey.json:', err)
+   }
+} else {
+   console.warn(
+      'No Firebase service account provided.',
+   )
+}
 
 // TODO: add differentiation between account types, residents, management, application administrator
 
@@ -543,4 +563,7 @@ app.get('/api/manager/pending-verifications', async (req, res) => {
 //    }
 // })
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
+// Ensure the server listens on all interfaces when deployed (required by Fly.io)
+app.listen(PORT, '0.0.0.0', () =>
+   console.log(`Server running and listening on 0.0.0.0:${PORT}`),
+)
