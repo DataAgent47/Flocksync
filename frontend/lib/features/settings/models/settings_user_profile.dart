@@ -19,7 +19,7 @@ class SettingsUserProfile {
     required this.apartmentNumber,
     required this.propertyId,
     required this.photoUrl,
-    required this.hideApartmentNumber
+    required this.hideApartmentNumber,
     required this.verificationStatus,
   });
 
