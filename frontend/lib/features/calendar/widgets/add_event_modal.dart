@@ -105,7 +105,7 @@ class _AddEventModalState extends State<AddEventModal> {
                         .doc(uid)
                         .collection('events')
                         .add({
-                      "date": widget.dateKey,
+                      "dateKey": widget.dateKey,
                       "title": titleController.text,
                       "description": descriptionController.text,
                       "time": timeController.text,

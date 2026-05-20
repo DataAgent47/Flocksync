@@ -26,7 +26,7 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
         .collection('users')
         .doc(user.uid)
         .collection('events')
-        .orderBy('date')
+        .orderBy('dateKey')
         .snapshots();
   }
 
@@ -144,7 +144,7 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
 
                     for (final doc in docs) {
                       final data = doc.data();
-                      final date = data['date'] as String;
+                      final date = data['dateKey'] as String;
 
                       events.putIfAbsent(date, () => []);
                       events[date]!.add({
