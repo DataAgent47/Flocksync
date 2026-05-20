@@ -101,7 +101,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
       return const TextSpan(
         text: 'Pending Review',
         style: TextStyle(
-          color: Colors.yellow, // temp color
+          color: Colors.orange, // temp color
           fontWeight: FontWeight.w600,
         ),
       );
