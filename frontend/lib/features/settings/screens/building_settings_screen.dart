@@ -591,15 +591,13 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                     else
                       _infoRow(label: 'Role', value: 'Resident'),
                     const SizedBox(height: 8),
-                    const Divider(height: 18), // Add a divider for visual separation
-                    // Inside ListView
+                    const Divider(height: 18),
                     StreamBuilder<String?>(
                       stream: widget.controller.managerRoleStream(
                         uid: widget.uid,
                         propertyId: profile.propertyId,
                       ),
                       builder: (context, roleSnapshot) {
-                        // Only show if the role is exactly 'Building Owner'
                         if (roleSnapshot.data?.trim() == 'Building Owner') {
                           return _infoRow(
                             label: 'Ownership',
@@ -613,7 +611,6 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                           );
                         }
-                        // Return an empty widget if not a Building Owner
                         return const SizedBox.shrink();
                       },
                     ),
