@@ -8,28 +8,31 @@
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/DataAgent47/Flocksync.git
    cd Flocksync/frontend
    ```
 
 2. Install dependencies:
-    ```bash
-    fvm install # For FVM
-    fvm use # For FVM
-    flutter pub get
-    ```
+
+   ```bash
+   fvm install # For FVM
+   fvm use # For FVM
+   flutter pub get
+   ```
 
 3. Verify your Flutter installation:
+
    ```bash
    flutter doctor
    ```
 
 4. Run the app
-    ```bash
-    flutter run
-    flutter run -d chrome
-    ```
+   ```bash
+   flutter run
+   flutter run -d chrome
+   ```
 
 ### Backend API
 
@@ -44,6 +47,7 @@ note for Android emulator: use 10.0.2.2 instead of localhost
 ### Optional API setup
 
 For OpenStreetMaps
+
 ```bash
 flutter run \
     --dart-define MAP_TILE_URL_TEMPLATE=https://your-provider/{z}/{x}/{y}.png?key=YOUR_KEY \
@@ -51,7 +55,7 @@ flutter run \
     --dart-define MAP_TILE_USER_AGENT_PACKAGE=com.flocksync.frontend
 ```
 
-### Firebase setup 
+### Firebase setup
 
 If you have the config files, which are named `firebase_options.dart`, then just drop it to `frontend/lib`.
 
@@ -66,12 +70,15 @@ Use the Firebase Emulator to test Firestore rules locally without deploying to p
 ## One-time setup
 
 **1. Initialize the emulator (run once in the project root):**
+
 ```bash
 firebase init emulators
 ```
+
 When prompted, select **Firestore Emulator**. Accept the default port (`8080`).
 
 **2. Add the emulator flag to `main.dart`** right after `Firebase.initializeApp()`:
+
 ```dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,16 +102,19 @@ void main() async {
 Open **two terminals**:
 
 **Terminal 1 — start the emulator:**
+
 ```bash
 firebase emulators:start --only firestore
 ```
 
 **Terminal 2 — run Flutter pointing at the emulator:**
+
 ```bash
 flutter run --dart-define=USE_EMULATOR=true
 ```
 
 To test against **real Firestore** (production), just run without the flag:
+
 ```bash
 flutter run
 ```
@@ -114,10 +124,13 @@ flutter run
 ## Emulator UI
 
 While the emulator is running, open your browser to:
+
 ```
 http://localhost:4000
 ```
+
 From here you can:
+
 - View and edit documents
 - Run queries
 - Test rule changes in real time
@@ -131,6 +144,7 @@ From here you can:
 3. Interact with the app in the simulator — no deploy needed
 
 When your rules are ready for production:
+
 ```bash
 firebase deploy --only firestore:rules
 ```
@@ -142,3 +156,4 @@ firebase deploy --only firestore:rules
 - The emulator starts with an **empty database** each time. Add test documents manually via the emulator UI or seed them from your app.
 - The `--dart-define=USE_EMULATOR=true` flag only affects your local machine. Teammates must opt in by running with the same flag.
 - Never commit production Firebase credentials or secrets to the repo.
+- For manual building ownership verification, go to the supabase buck verification-documents. The first level is the user's firebase UID, and inside it contains all of the documents they uploaded. To accept or reject the the proof, update the owner verification's status field in firebase console to "verified" for acceptance or "rejected" for rejection.
