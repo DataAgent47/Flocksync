@@ -79,11 +79,14 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
   }
 
   TextSpan _verificationMessage({
-    required bool isVerified,
+    required String status,
     required bool isBuildingOwner,
   }) {
-    // Specific color for verified word
-    if (isVerified) {
+    final normalizedStatus = status.toLowerCase().trim();
+
+    // if status is officially verified
+    // need to manually set it to verified in firebase console
+    if (normalizedStatus == 'verified') {
       return const TextSpan(
         text: 'Verified!',
         style: TextStyle(
@@ -92,8 +95,29 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
         ),
       );
     }
+    
+    // if status is pending
+    if (normalizedStatus == 'pending') {
+      return const TextSpan(
+        text: 'Pending Review',
+        style: TextStyle(
+          color: Colors.yellow, // temp color
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    }
 
-    // Resident and management would have different contact points for verification issues
+    // rejected
+    if (normalizedStatus == 'rejected') {
+      return const TextSpan(
+        text: 'Verification Rejected',
+        style: TextStyle(
+          color: FlockColors.errorRed,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    }
+
     final contactTarget = isBuildingOwner ? 'support' : 'building management';
     return TextSpan(
       style: const TextStyle(
@@ -109,8 +133,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
           ),
         ),
         const TextSpan(
-          text:
-              '. Your verification is still pending. If you have any further questions, please contact ',
+          text: '. Please upload a document below to verify your account or contact ',
         ),
         TextSpan(text: contactTarget),
         const TextSpan(text: '.'),
@@ -431,6 +454,8 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                       role: profile.role,
                     );
 
+                final normalizedStatus = profile.verificationStatus.toLowerCase().trim();
+
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                   children: [
@@ -456,48 +481,48 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                         value: 'No building linked yet.',
                       )
                     else
-                      StreamBuilder<bool?>(
-                        stream: membershipState,
-                        builder: (context, verificationSnapshot) {
-                          final isVerified = verificationSnapshot.data ?? false;
-                          return _infoRow(
-                            label: 'Verification',
-                            value: Text.rich(
-                              _verificationMessage(
-                                isVerified: isVerified,
-                                isBuildingOwner: isManager,
-                              ),
-                            ),
-                          );
-                        },
+                      _infoRow(
+                        label: 'Verification',
+                        value: Text.rich(
+                          _verificationMessage(
+                            status: profile.verificationStatus,
+                            isBuildingOwner: isManager,
+                          ),
+                        ),
                       ),
+                    if (normalizedStatus != 'verified')
                     Card(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
                           children: [
-                            const Text(
-                              'Test Document Picker',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            const SizedBox(height: 8),
-                            ElevatedButton.icon(
-                              onPressed: _pickVerificationDocument,
-                              icon: const Icon(Icons.folder_open),
-                              label: const Text('Pick Test File'),
-                            ),
-                            if (_statusMessage != null) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                _statusMessage!,
-                                style: TextStyle(
-                                  color: _statusIsError ? Colors.red : Colors.green,
-                                  fontSize: 13,
-                                ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Upload Proof of Ownership',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  Text(
+                                    'ex: Property Tax Document, any official document that contains the address of the building',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: FlockColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                            IconButton.filled(
+                              onPressed: _pickVerificationDocument,
+                              icon: const Icon(Icons.upload_file),
+                              tooltip: 'Upload document',
+                              style: IconButton.styleFrom(
+                                backgroundColor: FlockColors.darkGreen,
+                                foregroundColor: FlockColors.cream,
+                              ),
+                            ),
                           ],
                         ),
                       ),
