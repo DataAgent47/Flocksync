@@ -63,8 +63,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
         );
 
         if (!mounted) return;
-        
-        // This closes the showSnackBar call properly
+  
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -111,7 +110,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
     // if status is pending
     if (normalizedStatus == 'pending') {
       return const TextSpan(
-        text: 'Pending Review',
+        text: 'Pending',
         style: TextStyle(
           color: Colors.orange, // temp color
           fontWeight: FontWeight.w600,
@@ -535,7 +534,6 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                               icon: const Icon(Icons.upload_file),
                               tooltip: 'Upload document',
                               style: IconButton.styleFrom(
-                                // Button turns red if rejected to get attention
                                 backgroundColor: isRejected ? FlockColors.errorRed : FlockColors.darkGreen,
                                 foregroundColor: FlockColors.cream,
                               ),
