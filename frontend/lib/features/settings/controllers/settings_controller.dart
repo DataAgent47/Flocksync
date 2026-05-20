@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/services/auth_service.dart';
 import '../models/settings_property_info.dart';
@@ -61,23 +62,31 @@ class SettingsController extends ChangeNotifier {
 
   Future<bool> uploadVerificationDocument({
     required String uid,
-    required String propertyId,
-    required String role,
-    required Uint8List fileBytes, // Switched from String filePath
-    required String fileName,    // Added to preserve document extensions (.pdf, .png)
+    required Uint8List fileBytes,
+    required String fileName,
   }) async {
-    return _runAction(() async {
-      // Calls the aligned service signature targeting private buckets
-      await _firestoreService.uploadAndVerifyDocument(
-        uid: uid,
-        propertyId: propertyId,
-        role: role,
-        fileBytes: fileBytes,
-        fileName: fileName,
-      );
-      
-      successMessage = 'Verification document uploaded successfully. Pending review.';
-    });
+    try {
+      final supabase = Supabase.instance.client;
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String storagePath = '$uid/$timestamp\_$fileName';
+
+      await supabase.storage.from('verification-documents').uploadBinary(
+            storagePath,
+            fileBytes,
+            fileOptions: FileOptions(
+              contentType: fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+              upsert: false,
+            ),
+          );
+
+     
+      await _firestoreService.updateVerificationPath(uid, storagePath);
+
+      return true;
+    } catch (e) {
+      print('Supabase storage exception: $e');
+      return false;
+    }
   }
 
   Future<SettingsUserProfile?> hydrateProfile(String uid) {
