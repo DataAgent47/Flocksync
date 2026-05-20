@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:file_picker/file_picker.dart'
+import 'package:file_picker/file_picker.dart';
 
 import '../../../core/theme/flock_theme.dart';
 import '../../../core/widgets/flock_message_banner.dart';
