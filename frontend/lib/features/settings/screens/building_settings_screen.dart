@@ -45,49 +45,34 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
   }
   Future<void> _pickVerificationDocument() async {
     try {
-      // 1. Call the base platform picker directly
       final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
-        withData: true, // Crucial for Flutter Web! Otherwise result.files.first.bytes will return null
+        withData: true,
       );
 
-      // 2. Safely check if a file was returned without looking for a physical '.path'
       if (result != null && result.files.isNotEmpty) {
         final pickedFile = result.files.first;
-        final fileName = pickedFile.name;
         
         setState(() {
-          _statusMessage = 'Selected file: $fileName';
+          _statusMessage = 'Uploading ${pickedFile.name}...';
           _statusIsError = false;
         });
+        
+        final ok = await widget.controller.uploadVerificationDocument(
+          uid: widget.uid,
+          fileBytes: pickedFile.bytes!,
+          fileName: pickedFile.name,
+        );
 
-        // 3. Handle data safely depending on environment
-        if (pickedFile.bytes != null) {
-          // This is what will trigger on Chrome/Web!
-          final fileBytes = pickedFile.bytes;
-          debugPrint('Web file loaded: ${fileBytes!.length} bytes');
-          
-          // TODO: Pass bytes to your controller for upload
-          // await widget.controller.uploadVerificationBytes(
-          //   uid: widget.uid,
-          //   bytes: fileBytes,
-          //   fileName: fileName,
-          // );
-        } else if (pickedFile.path != null) {
-          // This would handle native fallback (mobile/desktop app)
-          debugPrint('Native file path: ${pickedFile.path}');
-        }
-
-      } else {
         setState(() {
-          _statusMessage = 'File picking canceled.';
-          _statusIsError = true;
+          _statusMessage = ok ? 'Upload successful!' : 'Upload failed.';
+          _statusIsError = !ok;
         });
       }
     } catch (e) {
       setState(() {
-        _statusMessage = 'Error picking file: $e';
+        _statusMessage = 'Error: $e';
         _statusIsError = true;
       });
     }
