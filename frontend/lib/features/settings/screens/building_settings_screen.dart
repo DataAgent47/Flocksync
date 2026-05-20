@@ -110,7 +110,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
     // rejected
     if (normalizedStatus == 'rejected') {
       return const TextSpan(
-        text: 'Verification Rejected',
+        text: 'Rejected',
         style: TextStyle(
           color: FlockColors.errorRed,
           fontWeight: FontWeight.w600,
@@ -455,7 +455,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                     );
 
                 final normalizedStatus = profile.verificationStatus.toLowerCase().trim();
-
+                final isRejected = normalizedStatus == 'rejected';
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                   children: [
@@ -502,11 +502,15 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Upload Proof of Ownership',
-                                    style: Theme.of(context).textTheme.titleMedium,
+                                    isRejected ? 'Your Document Was Rejected' : 'Upload Proof of Ownership',
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: isRejected ? FlockColors.errorRed : null,
+                                    ),
                                   ),
                                   Text(
-                                    'ex: Property Tax Document, any official document that contains the address of the building',
+                                    isRejected 
+                                      ? 'Your document was not accepted. Please upload a clearer version.' 
+                                      : 'ex: Property Tax Document, any official document that contains the address of the building',
                                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: FlockColors.textSecondary,
                                     ),
@@ -519,7 +523,8 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
                               icon: const Icon(Icons.upload_file),
                               tooltip: 'Upload document',
                               style: IconButton.styleFrom(
-                                backgroundColor: FlockColors.darkGreen,
+                                // Button turns red if rejected to get attention
+                                backgroundColor: isRejected ? FlockColors.errorRed : FlockColors.darkGreen,
                                 foregroundColor: FlockColors.cream,
                               ),
                             ),
