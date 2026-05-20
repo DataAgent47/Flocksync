@@ -429,14 +429,11 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
               style: TextStyle(fontSize: 12, color: FlockColors.textSecondary),
             ),
             const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: _pickVerificationDocument,
-                icon: const Icon(Icons.upload_file),
-                label: const Text('Update Document'),
+            FilledButton.icon(
+              onPressed: _pickVerificationDocument,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Update Document'),
               ),
-            ),
           ],
         );
 
@@ -454,16 +451,14 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
               style: TextStyle(fontSize: 12, color: FlockColors.textSecondary),
             ),
             const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: _pickVerificationDocument,
-                icon: const Icon(Icons.upload_file),
-                label: const Text('Re-upload Document'),
-              ),
+            FilledButton.icon(
+              onPressed: _pickVerificationDocument,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Reupload Document'),
             ),
           ],
         );
+
 
       case 'unverified':
       default:
@@ -480,13 +475,10 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
               style: TextStyle(fontSize: 12, color: FlockColors.textSecondary),
             ),
             const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton.icon(
-                onPressed: _pickVerificationDocument,
-                icon: const Icon(Icons.upload_file),
-                label: const Text('Upload Document'),
-              ),
+            FilledButton.icon(
+              onPressed: _pickVerificationDocument,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Upload Document'),
             ),
           ],
         );
