@@ -28,8 +28,8 @@ jobs:
       - name: Build web app
         run: |
           flutter build web --release --base-href /Flocksync/ \
-            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
-            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
         working-directory: frontend
 
       - name: Deploy to GitHub Pages
