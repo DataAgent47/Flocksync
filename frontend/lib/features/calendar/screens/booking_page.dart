@@ -142,114 +142,119 @@ class _BookingPageState extends State<BookingPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.darkGreen,
+        backgroundColor: AppColors.cardBackground,
+        elevation: 0,
+        centerTitle: false,
         title: const Text("Book Maintenance"),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "${widget.date.month}/${widget.date.day}/${widget.date.year} • ${widget.slot}",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.darkGreen,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _sectionTitle("Category"),
-            DropdownButtonFormField<String>(
-              items: ["Plumbing", "Electrical", "Heating", "Appliance", "Other"]
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
-              onChanged: (v) => setState(() => selectedCategory = v),
-              decoration: _inputDecoration(),
-            ),
-
-            const SizedBox(height: 20),
-
-            _sectionTitle("Describe the problem"),
-            TextField(
-              controller: descriptionController,
-              maxLines: 4,
-              decoration: _inputDecoration(),
-            ),
-
-            const SizedBox(height: 20),
-
-            _sectionTitle("Urgency"),
-            DropdownButtonFormField<String>(
-              items: ["Low", "Medium", "High"]
-                  .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                  .toList(),
-              onChanged: (v) => setState(() => selectedUrgency = v),
-              decoration: _inputDecoration(),
-            ),
-
-            const SizedBox(height: 20),
-
-            _sectionTitle("Entry Permission"),
-            DropdownButtonFormField<String>(
-              items: [
-                "Allow entry if not home",
-                "Do not allow entry"
-              ]
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) => setState(() => entryPermission = v),
-              decoration: _inputDecoration(),
-            ),
-
-            const SizedBox(height: 20),
-
-            _sectionTitle("Upload Photo (optional)"),
-            GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                height: 120,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(12),
+      
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "${widget.date.month}/${widget.date.day}/${widget.date.year} • ${widget.slot}",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.darkGreen,
                 ),
-                child: _imageFile == null
-                    ? const Center(
-                        child: Icon(Icons.camera_alt,
-                            size: 40, color: Colors.grey),
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: _imageBytes != null
-                            ? Image.memory(_imageBytes!, fit: BoxFit.cover)
-                            : const SizedBox(),
+              ),
+              const SizedBox(height: 20),
+
+              _sectionTitle("Category"),
+              DropdownButtonFormField<String>(
+                items: ["Plumbing", "Electrical", "Heating", "Appliance", "Other"]
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) => setState(() => selectedCategory = v),
+                decoration: _inputDecoration(),
+              ),
+
+              const SizedBox(height: 20),
+
+              _sectionTitle("Describe the problem"),
+              TextField(
+                controller: descriptionController,
+                maxLines: 4,
+                decoration: _inputDecoration(),
+              ),
+
+              const SizedBox(height: 20),
+
+              _sectionTitle("Urgency"),
+              DropdownButtonFormField<String>(
+                items: ["Low", "Medium", "High"]
+                    .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                    .toList(),
+                onChanged: (v) => setState(() => selectedUrgency = v),
+                decoration: _inputDecoration(),
+              ),
+
+              const SizedBox(height: 20),
+
+              _sectionTitle("Entry Permission"),
+              DropdownButtonFormField<String>(
+                items: [
+                  "Allow entry if not home",
+                  "Do not allow entry"
+                ]
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (v) => setState(() => entryPermission = v),
+                decoration: _inputDecoration(),
+              ),
+
+              const SizedBox(height: 20),
+
+              _sectionTitle("Upload Photo (optional)"),
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: _imageFile == null
+                      ? const Center(
+                          child: Icon(Icons.camera_alt,
+                              size: 40, color: Colors.grey),
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: _imageBytes != null
+                              ? Image.memory(_imageBytes!, fit: BoxFit.cover)
+                              : const SizedBox(),
+                        ),
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              ElevatedButton(
+                onPressed: _isSubmitting ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.darkGreen,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: _isSubmitting
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "Submit Request",
+                        style: TextStyle(fontSize: 16, color: Colors.white),
                       ),
               ),
-            ),
-
-            const SizedBox(height: 30),
-
-            ElevatedButton(
-              onPressed: _isSubmitting ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.darkGreen,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: _isSubmitting
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      "Submit Request",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      )
     );
   }
 

@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/theme/flock_theme.dart';
-import '../../../main.dart'; 
+import '../screens/maintenance_page.dart';
 
 class AddEventModal extends StatefulWidget {
   final String dateKey;
   final Future<void> Function() onSave;
+  final VoidCallback onRequestMaintenance;
 
   const AddEventModal({
     super.key,
     required this.dateKey,
     required this.onSave,
+    required this.onRequestMaintenance,
   });
 
   @override
@@ -132,8 +134,7 @@ class _AddEventModalState extends State<AddEventModal> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            MainShell(user: user!, initialIndex: 2),
+                        builder: (_) => const MaintenancePage(),
                       ),
                     );
                   },

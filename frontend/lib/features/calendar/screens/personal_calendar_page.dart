@@ -3,6 +3,7 @@ import 'package:flocksync/core/theme/flock_theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/add_event_modal.dart';
+import 'package:flocksync/main.dart';
 
 class PersonalCalendarPage extends StatefulWidget {
   const PersonalCalendarPage({super.key});
@@ -328,6 +329,18 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
         return AddEventModal(
           dateKey: key,
           onSave: () async {},
+          onRequestMaintenance: () {
+            Navigator.pop(context);
+
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => MainShell(
+                  user: FirebaseAuth.instance.currentUser!,
+                  initialIndex: 2,
+                ),
+              ),
+            );
+          },
         );
       },
     );
