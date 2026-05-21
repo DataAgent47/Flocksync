@@ -56,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: widget.showBackButton ? AppBar(
-            title: Text('Return to dashboard')
+            title: Text('Back')
           ): null,
           backgroundColor: FlockColors.cream,
           body: SafeArea(

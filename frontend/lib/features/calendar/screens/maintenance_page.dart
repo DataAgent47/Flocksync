@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../widgets/calendar.dart';
 import '../widgets/upcoming.dart';
 import 'package:flocksync/core/theme/flock_theme.dart';
+import 'package:flocksync/main.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flocksync/features/settings/screens/settings_screen.dart';
 
 class MaintenancePage extends StatelessWidget {
   const MaintenancePage({super.key});
@@ -49,7 +52,20 @@ class MaintenancePage extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const CircleAvatar(),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SettingsScreen(
+                                  user: FirebaseAuth.instance.currentUser!,
+                                  showBackButton: true,
+                                ),
+                              ),
+                            );
+                          },
+                          child: profileImage(),
+                        ),
                       ],
                     ),
 

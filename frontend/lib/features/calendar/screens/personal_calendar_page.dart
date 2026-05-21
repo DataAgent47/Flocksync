@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/add_event_modal.dart';
 import 'package:flocksync/main.dart';
+import 'package:flocksync/features/settings/screens/settings_screen.dart';
 
 class PersonalCalendarPage extends StatefulWidget {
   const PersonalCalendarPage({super.key});
@@ -63,24 +64,53 @@ class _PersonalCalendarPageState extends State<PersonalCalendarPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Aligned page header 
-              Text(
-                "Calendar",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreen,
-                  letterSpacing: -0.5,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Calendar",
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.darkGreen,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        "View and manage your upcoming events.",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SettingsScreen(
+                            user: FirebaseAuth.instance.currentUser!,
+                            showBackButton: true,
+                          ),
+                        ),
+                      );
+                    },
+                    child: profileImage(),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                "View and manage your upcoming events.",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
-              ),
+              
               const SizedBox(height: 24),
 
               Row(
