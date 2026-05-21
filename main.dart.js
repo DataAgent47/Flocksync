@@ -11530,7 +11530,7 @@ $.a9.toString
 s=2
 return A.i(A.alq(A.blD()),$async$adj)
 case 2:s=3
-return A.i(A.aDY("","https://hypdascxujnjreizrblr.supabase.co   --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cGRhc2N4dWpuanJlaXpyYmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDMzMDAsImV4cCI6MjA5MzYxOTMwMH0.OHKyuoKadWV61dzttufLJHSsBGMRGoh7hCCTinwVhLc"),$async$adj)
+return A.i(A.aDY("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cGRhc2N4dWpuanJlaXpyYmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDMzMDAsImV4cCI6MjA5MzYxOTMwMH0.OHKyuoKadWV61dzttufLJHSsBGMRGoh7hCCTinwVhLc","https://hypdascxujnjreizrblr.supabase.co"),$async$adj)
 case 3:if($.a9==null)A.aH7()
 q=$.a9
 q.toString
