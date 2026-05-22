@@ -61694,7 +61694,7 @@ h===$&&A.c()
 r=h.e
 if(r!=null){q=A.aV(8)
 r=A.bar(new A.fW(r.b,r.c),16)
-p=A.bcP(u.d,"com.flocksync.frontend")
+p=A.bcP(u.d,"com.flocksync.flocksync")
 o=A.bbS(A.a([A.bcI("OpenStreetMap")],t.X1),!1)
 h=h.e
 g.push(A.zg(q,A.d_(A.b9o(A.a([p,o,A.bav(A.a([A.bau(B.uD,44,new A.fW(h.b,h.c),44)],t._I))],s),r),180,1/0),B.bJ))}else{h=A.aA(25,B.y.C()>>>16&255,B.y.C()>>>8&255,B.y.C()&255)
@@ -62018,7 +62018,7 @@ for(;;)switch(s){case 0:d=B.c.S(a)
 if(d.length<3){q=B.hy
 s=1
 break}s=3
-return A.i(p.yW(A.eh("http://localhost:5050/api/maps/autocomplete",0,null).u3(A.b(["q",d,"limit","5"],t.N,t.z))),$async$GF)
+return A.i(p.yW(A.eh("https://flocksync-backend.fly.dev/api/maps/autocomplete",0,null).u3(A.b(["q",d,"limit","5"],t.N,t.z))),$async$GF)
 case 3:m=a0
 l=B.aS.Ae(A.nF(A.nA(m.e)).cU(m.w),null)
 k=t.a
@@ -62049,7 +62049,7 @@ var $async$Kq=A.k(function(b,c){if(b===1)return A.l(c,r)
 for(;;)switch(s){case 0:d=B.c.S(a)
 if(d.length===0)throw A.h(B.Zr)
 s=3
-return A.i(p.yW(A.eh("http://localhost:5050/api/maps/verify",0,null).u3(A.b(["address",d],t.N,t.z))),$async$Kq)
+return A.i(p.yW(A.eh("https://flocksync-backend.fly.dev/api/maps/verify",0,null).u3(A.b(["address",d],t.N,t.z))),$async$Kq)
 case 3:o=c
 n=B.aS.Ae(A.nF(A.nA(o.e)).cU(o.w),null)
 m=t.a
@@ -62794,7 +62794,7 @@ ax5(a){var s,r,q=null,p=a.w,o=a.x
 if(p==null||o==null){s=A.aV(12)
 return A.bs(q,B.KH,B.n,q,q,new A.bo(B.aA,q,A.dk(B.cr,B.q,1),s,q,q,B.J),q,180,q,q,q,q,q)}s=A.aV(12)
 r=A.bar(new A.fW(p,o),16)
-return A.zg(s,A.d_(A.b9o(A.a([A.bcP(u.d,"com.flocksync.frontend"),A.bbS(A.a([A.bcI("OpenStreetMap")],t.X1),!1),A.bav(A.a([A.bau(B.uD,44,new A.fW(p,o),44)],t._I))],t.p),r),220,q),B.bJ)},
+return A.zg(s,A.d_(A.b9o(A.a([A.bcP(u.d,"com.flocksync.flocksync"),A.bbS(A.a([A.bcI("OpenStreetMap")],t.X1),!1),A.bav(A.a([A.bau(B.uD,44,new A.fW(p,o),44)],t._I))],t.p),r),220,q),B.bJ)},
 aAS(a,b,c){var s=null,r=b.r
 if(r.length===0)return A.an("No building is linked to this account yet.",s,s,s,A.T(a).ok.z,s,s)
 return A.fi(new A.aJv(this,c),this.a.d.b.aQu(r),t.OC)},
