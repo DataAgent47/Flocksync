@@ -27,9 +27,14 @@ jobs:
 
       - name: Build web app
         run: |
-          flutter build web --release --base-href /Flocksync/ \
-            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          cd frontend
+          flutter build web \
+            --dart-define=BACKEND_API_URL='${{ secrets.BACKEND_API_URL }}' \
+            --dart-define=MAP_TILE_URL_TEMPLATE='${{ secrets.MAP_TILE_URL_TEMPLATE }}' \
+            --dart-define=MAP_TILE_ATTRIBUTION='${{ secrets.MAP_TILE_ATTRIBUTION }}' \
+            --dart-define=MAP_TILE_USER_AGENT_PACKAGE='${{ secrets.MAP_TILE_USER_AGENT_PACKAGE }}' \
+            --dart-define=SUPABASE_URL='${{ secrets.SUPABASE_URL }}' \
+            --dart-define=SUPABASE_ANON_KEY='${{ secrets.SUPABASE_ANON_KEY }}'
         working-directory: frontend
 
       - name: Deploy to GitHub Pages
