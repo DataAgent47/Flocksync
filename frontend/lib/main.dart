@@ -337,9 +337,7 @@ class _DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: FlockColors.background,
       body: ListView(
-        // Match other pages' header spacing and left alignment
         padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-        // Contains 'children' or elements for the Dashboard.
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -356,6 +354,7 @@ class _DashboardScreen extends StatelessWidget {
                 ),
               ),
 
+              // Profile
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -701,7 +700,7 @@ class _HoverProfileImageState extends State<_HoverProfileImage> {
   }
 }
 
-// ─── Forums landing — matches your mockup ──────────────────────────────────────
+// ─── Forums landing page ──────────────────────────────────────
 
 class _ForumsLandingScreen extends StatelessWidget {
   final String userId;
@@ -732,14 +731,35 @@ class _ForumsLandingScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Forums',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: FlockColors.darkGreen,
-                  letterSpacing: -0.5,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Forums',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: FlockColors.darkGreen,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SettingsScreen(
+                            user: fb_auth.FirebaseAuth.instance.currentUser!,
+                            showBackButton: true,
+                          ),
+                        ),
+                      );
+                    },
+                    child: profileImage(),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               const Text(

@@ -33,7 +33,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _signOut() async {
     final ok = await _controller.signOut();
-    if (!mounted || ok) {
+    if (!mounted) {
+      return;
+    }
+
+    if (ok) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
       return;
     }
 

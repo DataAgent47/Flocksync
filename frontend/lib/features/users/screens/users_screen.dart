@@ -5,6 +5,9 @@ import '../../settings/services/settings_firestore_service.dart';
 import '../services/users_service.dart';
 import '../widgets/filter_button.dart';
 import '../widgets/user_row.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../settings/screens/settings_screen.dart';
+import '../../../main.dart';
 
 class UsersScreen extends StatefulWidget {
   final String userId;
@@ -62,14 +65,35 @@ class _UsersScreenState extends State<UsersScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Users',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: FlockColors.darkGreen,
-                      letterSpacing: -0.5,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Users',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: FlockColors.darkGreen,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SettingsScreen(
+                                user: FirebaseAuth.instance.currentUser!,
+                                showBackButton: true,
+                              ),
+                            ),
+                          );
+                        },
+                        child: profileImage(),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   const Text(
