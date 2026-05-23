@@ -1,7 +1,6 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-// import mongoose from 'mongoose'
 import admin from 'firebase-admin'
 import fs from 'fs'
 import axios from 'axios'
@@ -206,12 +205,6 @@ const supabase = createClient(
    process.env.SUPABASE_URL,
    process.env.SUPABASE_SERVICE_ROLE_KEY,
 )
-//retired
-// using mongodb
-// mongoose
-//    .connect(process.env.MONGO_URI)
-//    .then(() => console.log('MongoDB connected'))
-//    .catch((err) => console.error('MongoDB connection error:', err))
 
 /*
    API Endpoints
