@@ -22,6 +22,7 @@ class UpcomingMaintenance extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             "Upcoming Maintenance",
@@ -33,78 +34,80 @@ class UpcomingMaintenance extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('bookings')
-                  .orderBy('createdAt', descending: false)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('bookings')
+                .orderBy('createdAt', descending: false)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                final docs = snapshot.data!.docs;
+              final docs = snapshot.data!.docs;
 
-                if (docs.isEmpty) {
-                  return const Center(
-                    child: Text("No upcoming maintenance"),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.grey[300],
-                            child: Icon(Icons.build, color: AppColors.darkGreen),
-                          ),
-                          const SizedBox(width: 12),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  data['category'] ?? "Maintenance Request",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "${data['date']} • ${data['slot']}",
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  "Urgency: ${data['urgency']}",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+              if (docs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text("No upcoming maintenance"),
                 );
-              },
-            ),
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final data =
+                      docs[index].data() as Map<String, dynamic>;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.grey[300],
+                          child: Icon(Icons.build,
+                              color: AppColors.darkGreen),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data['category'] ?? "Maintenance Request",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "${data['date']} • ${data['slot']}",
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Urgency: ${data['urgency']}",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ],
       ),

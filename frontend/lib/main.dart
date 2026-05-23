@@ -22,20 +22,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Read Supabase configuration from env
-  const supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://hypdascxujnjreizrblr.supabase.co',
-  );
-  const supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cGRhc2N4dWjuanJlaXpyYmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDMzMDAsImV4cCI6MjA5MzYxOTMwMH0.OHKyuoKadWV61dzttufLJHSsBGMRGoh7hCCTinwVhLc',
-  );
-
   await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
+    // API URL
+    url: 'https://hypdascxujnjreizrblr.supabase.co',
+    // Public Anon API Key
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cGRhc2N4dWpuanJlaXpyYmxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNDMzMDAsImV4cCI6MjA5MzYxOTMwMH0.OHKyuoKadWV61dzttufLJHSsBGMRGoh7hCCTinwVhLc',
   );
   // ── Local emulator (dev only) ──────────────────────────────────────────
   const bool kUseEmulator = bool.fromEnvironment('USE_EMULATOR');
@@ -346,9 +337,7 @@ class _DashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: FlockColors.background,
       body: ListView(
-        // Match other pages' header spacing and left alignment
         padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-        // Contains 'children' or elements for the Dashboard.
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -365,6 +354,7 @@ class _DashboardScreen extends StatelessWidget {
                 ),
               ),
 
+              // Profile
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -710,7 +700,7 @@ class _HoverProfileImageState extends State<_HoverProfileImage> {
   }
 }
 
-// ─── Forums landing — matches your mockup ──────────────────────────────────────
+// ─── Forums landing page ──────────────────────────────────────
 
 class _ForumsLandingScreen extends StatelessWidget {
   final String userId;
@@ -741,14 +731,35 @@ class _ForumsLandingScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Forums',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: FlockColors.darkGreen,
-                  letterSpacing: -0.5,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Forums',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                      color: FlockColors.darkGreen,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SettingsScreen(
+                            user: fb_auth.FirebaseAuth.instance.currentUser!,
+                            showBackButton: true,
+                          ),
+                        ),
+                      );
+                    },
+                    child: profileImage(),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               const Text(

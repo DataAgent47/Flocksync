@@ -33,7 +33,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _signOut() async {
     final ok = await _controller.signOut();
-    if (!mounted || ok) {
+    if (!mounted) {
+      return;
+    }
+
+    if (ok) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
       return;
     }
 
@@ -56,7 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context, _) {
         return Scaffold(
           appBar: widget.showBackButton ? AppBar(
-            title: Text('Return to dashboard')
+            title: Text('Back')
           ): null,
           backgroundColor: FlockColors.cream,
           body: SafeArea(
