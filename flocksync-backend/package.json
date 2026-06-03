@@ -12,13 +12,13 @@
    "license": "ISC",
    "type": "module",
    "dependencies": {
-      "@supabase/supabase-js": "^2.106.0",
+      "@supabase/supabase-js": "^2.107.0",
       "axios": "^1.16.1",
       "cors": "^2.8.6",
       "csv-parser": "^3.2.1",
       "dotenv": "^17.4.2",
       "express": "^5.2.1",
-      "firebase": "^12.13.0",
+      "firebase": "^12.14.0",
       "firebase-admin": "^13.10.0",
       "multer": "^2.1.1",
       "sharp": "^0.34.5"
