@@ -1,9 +1,9 @@
 # Flocksync
 
-![Flocksync logo](https://github.com/DataAgent47/Flocksync/blob/main/frontend/assets/images/logo-bird.png?raw=true)
+![Flocksync logo](https://github.com/Flocksync/Flocksync/blob/main/frontend/assets/images/logo-bird.png?raw=true)
 
 <p align="center">
-	[ <a href="https://dataagent47.github.io/Flocksync/">Live Demo</a> |
+	[ <a href="https://flocksync.github.io/Flocksync/">Live Demo</a> |
 	<a href="frontend/README.md#installation">Installation</a> |
 	<a href="https://www.figma.com/design/nzkiU2O97eiKWmJX4Uz2iI/Rental-project?node-id=163-1090&t=1CeewaEjvDEJbp7v-1">Figma Designs</a> ]
 </p>
