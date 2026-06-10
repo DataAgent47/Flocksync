@@ -35038,7 +35038,7 @@ bqY(a,b,c,d,e,f,g,h){var s,r=null,q=A.a([],t.Io),p=A.kt("supabase.realtime"),o=t
 o=A.b(["open",A.a([],o),"close",A.a([],o),"error",A.a([],o),"message",A.a([],o)],n,t.Ch)
 s=A.eh(a+"/websocket",0,r)
 s=s.u3(r).gpK()
-n=A.eM(B.Z8,n,n)
+n=A.eM(B.Z6,n,n)
 n.H(0,c)
 q=new A.ZR(q,s,n,f,g,A.bAc(),p,[],o,b)
 q.alb(a,b,r,r,c,25e3,d,e,r,2e4,f,r,g,h)
@@ -35528,7 +35528,7 @@ q=a4
 s=1
 break}a4.d=!1
 p=$.b7g()
-p.bw(B.e6,"Initialize Supabase v2.14.1",null,null)
+p.bw(B.e6,"Initialize Supabase v2.14.2",null,null)
 o=new A.aCK(new A.aB(new A.a2($.a8,t.D),t.h))
 o.EO()
 n=B.Oo.aIS(o)
@@ -35585,18 +35585,18 @@ e.ay!==$&&A.aS()
 e.ay=new A.axh(k,"public",m,!0,b)
 k=A.eM(f,o,o)
 c=A.kt("supabase.functions")
-A.eM(B.Z6,o,o).H(0,k)
+A.eM(B.Z7,o,o).H(0,k)
 c.bw(B.e6,"Initialize FunctionsClient v2.6.0 with url '"+g+"' and region 'null'",null,null)
 c.bw(B.c2,"Initialize with headers: "+k.k(0),null,null)
 e.as!==$&&A.aS()
 e.as=new A.amQ(m,!0,c)
 m=A.eM(f,o,o)
 k=A.kt("supabase.storage")
-g=A.eM(B.Z7,o,o)
+g=A.eM(B.Z8,o,o)
 g.H(0,m)
 g=new A.aEb(0,k,h,g)
 g.c=new A.akv(d,A.kt("supabase.storage"))
-k.bw(B.e6,"Initialize SupabaseStorageClient v2.5.5 with url: "+h+", retryAttempts: 0",null,null)
+k.bw(B.e6,"Initialize SupabaseStorageClient v2.5.6 with url: "+h+", retryAttempts: 0",null,null)
 k.bw(B.c2,"Initialize with headers: "+m.k(0),null,null)
 e.at!==$&&A.aS()
 e.at=g
@@ -35607,7 +35607,7 @@ o.H(0,f)
 o=A.bqY(j,null,o,d,null,g,B.hj,null)
 e.ax!==$&&A.aS()
 e.ax=o
-l.bw(B.e6,"Initialize SupabaseClient v2.12.1 with no custom access token",null,null)
+l.bw(B.e6,"Initialize SupabaseClient v2.12.2 with no custom access token",null,null)
 e.awK()
 a4.b=e
 a4.aCX()
@@ -122033,7 +122033,7 @@ case 4:if(n==null)n=p.a
 if(p.a===n){s=1
 break}p.a=n
 for(o=p.b,m=t.N,l=t.z,k=0;!1;++k){j=o[k]
-j.aUj(A.b(["access_token",n,"version","realtime-dart/2.7.3"],m,l))
+j.aUj(A.b(["access_token",n,"version","realtime-dart/2.7.4"],m,l))
 if(j.gaU2()&&j.gaU_())j.aU9(B.rr,A.b(["access_token",n],m,l))}case 1:return A.m(q,r)}})
 return A.n($async$us,r)},
 axX(){var s,r,q=this,p="transport"
@@ -129838,11 +129838,11 @@ B.Ls=new A.L(1,0.9254901960784314,0.9098039215686274,0.7843137254901961,B.f)
 B.aev=new A.tt("Marketplace",B.nO,B.LO,B.Ls,B.y)
 B.Z3=new A.cS([B.dx,B.aes,B.fv,B.aeu,B.dy,B.aer,B.em,B.aet,B.en,B.aev],A.a7("cS<em,tt>"))
 B.hM={"X-Client-Info":0}
-B.Z4=new A.c_(B.hM,["postgrest-dart/2.7.0"],t.li)
+B.Z4=new A.c_(B.hM,["postgrest-dart/2.7.1"],t.li)
 B.Z5=new A.c_(B.hM,["gotrue-dart/2.21.0"],t.li)
-B.Z6=new A.c_(B.hM,["functions-dart/2.6.0"],t.li)
-B.Z7=new A.c_(B.hM,["storage-dart/2.5.5"],t.li)
-B.Z8=new A.c_(B.hM,["realtime-dart/2.7.3"],t.li)
+B.Z6=new A.c_(B.hM,["realtime-dart/2.7.4"],t.li)
+B.Z7=new A.c_(B.hM,["functions-dart/2.6.0"],t.li)
+B.Z8=new A.c_(B.hM,["storage-dart/2.5.6"],t.li)
 B.a__={"0":0,"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"+":10,"*":11,"#":12}
 B.Z9=new A.c_(B.a__,["0","1","2","3","4","5","6","7","8","9","+","*","#"],t.li)
 B.Za=new A.cS([B.f7,191],A.a7("cS<H_,v>"))
@@ -132593,12 +132593,12 @@ s($,"bDw","b6Q",()=>new A.y())
 r($,"brI","b6P",()=>{var q=new A.aul()
 q.pg($.b6Q())
 return q})
-s($,"bAA","bha",()=>{var q,p,o=A.a(["supabase-dart/2.12.1"],t.s)
+s($,"bAA","bha",()=>{var q,p,o=A.a(["supabase-dart/2.12.2"],t.s)
 o.push("runtime=dart")
 q=t.z
 p=t.N
 return A.uE(A.b(["X-Client-Info",B.b.aI(o,"; ")],q,q),p,p)})
-s($,"bAB","bh9",()=>{var q,p,o=A.a(["supabase-flutter/2.14.1"],t.s)
+s($,"bAB","bh9",()=>{var q,p,o=A.a(["supabase-flutter/2.14.2"],t.s)
 o.push("runtime=dart")
 q=t.z
 p=t.N
