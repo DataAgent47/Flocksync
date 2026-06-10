@@ -68,6 +68,7 @@ class _BuildingSettingsScreenState extends State<BuildingSettingsScreen> {
         setState(() => _statusMessage = null);
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: FlockColors.errorRed),
       );

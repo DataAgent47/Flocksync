@@ -71,7 +71,7 @@ class SettingsController extends ChangeNotifier {
     try {
       final supabase = Supabase.instance.client;
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String storagePath = '$uid/$timestamp\_$fileName';
+      final String storagePath = '$uid/${timestamp}_$fileName';
 
       await supabase.storage.from('verification-documents').uploadBinary(
             storagePath,
@@ -89,7 +89,6 @@ class SettingsController extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      print('Supabase storage exception: $e');
       return false;
     }
   }

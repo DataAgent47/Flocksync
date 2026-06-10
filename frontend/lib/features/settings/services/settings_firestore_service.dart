@@ -339,8 +339,7 @@ class SettingsFirestoreService {
         }
       });
     } catch (e) {
-      print('Error updating ownership status: $e');
-      throw e;
+      rethrow;
     }
   }
 }

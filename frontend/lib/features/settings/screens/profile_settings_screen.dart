@@ -271,8 +271,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         _isUploadingPhoto = false;
       });
     } catch (e) {
-      debugPrint('UPLOAD ERROR: $e');
-
       setState(() {
         _statusMessage = 'Failed to upload image: $e';
         _statusIsError = true;

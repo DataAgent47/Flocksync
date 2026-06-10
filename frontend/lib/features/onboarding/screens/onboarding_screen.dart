@@ -1501,12 +1501,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           fileName: _pickedFile!.name,
                         );
 
-                        if (success) {
-                          _updateFlow(_flow.goTo(10));
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Upload failed. Please try again.')),
-                          );
+                        if (mounted) {
+                          if (success) {
+                            _updateFlow(_flow.goTo(10));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Upload failed. Please try again.')),
+                            );
+                          }
                         }
 
                         setState(() => _isSyncingStep = false);
